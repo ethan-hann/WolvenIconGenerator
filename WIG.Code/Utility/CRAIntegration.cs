@@ -1,7 +1,7 @@
-﻿using System.Diagnostics;
-using System.IO.Pipes;
-using AetherUtils.Core.Files;
+﻿using AetherUtils.Core.Files;
 using AetherUtils.Core.Logging;
+using System.Diagnostics;
+using System.IO.Pipes;
 
 namespace WolvenIconGenerator.Utility
 {

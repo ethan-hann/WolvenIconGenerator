@@ -21,7 +21,7 @@ namespace WolvenIconGenerator.Custom_Controls
 
         private void CustomPictureBox_DragEnter(object? sender, DragEventArgs e)
         {
-            e.Effect = e.Data?.GetDataPresent(DataFormats.FileDrop) is true 
+            e.Effect = e.Data?.GetDataPresent(DataFormats.FileDrop) is true
                 ? DragDropEffects.Copy : DragDropEffects.None;
         }
 
@@ -41,7 +41,8 @@ namespace WolvenIconGenerator.Custom_Controls
 
                 Image = image;
                 ImagePath = file;
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 AuLogger.GetCurrentLogger<CustomPictureBox>().Error(ex.Message);
             }

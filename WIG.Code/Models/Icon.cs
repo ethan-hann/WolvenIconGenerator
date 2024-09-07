@@ -110,7 +110,7 @@ namespace WolvenIconGenerator.Models
         /// <summary>
         /// Empty constructor for JSON deserialization.
         /// </summary>
-        public Icon(){ }
+        public Icon() { }
 
         /// <summary>
         /// Create a new Icon object from a path to a <c>.png</c> image file.
@@ -131,7 +131,8 @@ namespace WolvenIconGenerator.Models
                 ImagePath = imagePath;
                 IconName = imagePath.Split('\\').Last();
                 IconImage = Image.FromFile(imagePath);
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 AuLogger.GetCurrentLogger<Icon>().Error(e);
             }
@@ -155,7 +156,7 @@ namespace WolvenIconGenerator.Models
         /// <param name="imagePath">The path to the <c>.png</c> file for this icon.</param>
         /// <param name="archivePath">The path to the <c>.archive</c> file for this icon.</param>
         /// <param name="iconName">The name of the icon. Does not need to be unique.</param>
-        public Icon(string imagePath, string archivePath, string iconName) : 
+        public Icon(string imagePath, string archivePath, string iconName) :
             this(imagePath, archivePath)
         {
             IconName = iconName;
@@ -178,7 +179,8 @@ namespace WolvenIconGenerator.Models
                 IconImage.Tag = ImagePath;
 
                 return IconImage != null;
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 AuLogger.GetCurrentLogger<Icon>("EnsureImage").Error(e);
             }

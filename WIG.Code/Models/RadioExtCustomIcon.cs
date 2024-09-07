@@ -1,6 +1,5 @@
-﻿using System.ComponentModel;
-using Newtonsoft.Json;
-using Org.BouncyCastle.Asn1.Cms;
+﻿using Newtonsoft.Json;
+using System.ComponentModel;
 
 namespace WolvenIconGenerator.Models
 {

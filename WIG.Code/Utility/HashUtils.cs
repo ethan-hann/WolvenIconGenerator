@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Security.Cryptography;
 
 namespace WolvenIconGenerator.Utility
 {
@@ -25,6 +20,17 @@ namespace WolvenIconGenerator.Utility
             var fileHash = BitConverter.ToString(hashBytes).Replace("-", "");
             fileHash = useLowerInvariant ? fileHash.ToLowerInvariant() : fileHash.ToUpperInvariant();
             return fileHash;
+        }
+
+        /// <summary>
+        /// Compares two SHA256 hashes for equality.
+        /// </summary>
+        /// <param name="hash1">The first hash.</param>
+        /// <param name="hash2">The second hash.</param>
+        /// <returns><c>true</c> if the two hashes are equal; <c>false</c> otherwise.</returns>
+        public static bool CompareSha256Hash(string hash1, string hash2)
+        {
+            return string.Equals(hash1, hash2, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

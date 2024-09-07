@@ -93,6 +93,16 @@ namespace WolvenIconGenerator.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap app_logo {
+            get {
+                object obj = ResourceManager.GetObject("app_logo", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap copy_alt {
             get {
                 object obj = ResourceManager.GetObject("copy_alt", resourceCulture);
@@ -226,6 +236,16 @@ namespace WolvenIconGenerator.Properties {
         internal static System.Drawing.Bitmap magic_wand_32x32 {
             get {
                 object obj = ResourceManager.GetObject("magic_wand_32x32", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap splashBackground {
+            get {
+                object obj = ResourceManager.GetObject("splashBackground", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
