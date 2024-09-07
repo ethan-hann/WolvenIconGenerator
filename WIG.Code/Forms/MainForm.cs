@@ -22,12 +22,12 @@ public partial class MainForm : Form
     private void CreateImageList()
     {
         _tabImages.Images.Add("create", Resources.add_image);
-        _tabImages.Images.Add("export", Resources.export);
+        _tabImages.Images.Add("extract", Resources.export);
         _tabImages.ImageSize = new Size(16, 16);
         mainTabs.ImageList = _tabImages;
 
         tabCreateIcon.ImageKey = "create";
-        tabExportIcon.ImageKey = "export";
+        tabExtractIcon.ImageKey = "extract";
     }
 
     private void ResetTabs()
@@ -46,8 +46,8 @@ public partial class MainForm : Form
 
     private void ResetExportTab()
     {
-        tabExportIcon.Controls.Clear();
-        tabExportIcon.Controls.Add(new ExportIconCtl { Dock = DockStyle.Fill });
+        tabExtractIcon.Controls.Clear();
+        tabExtractIcon.Controls.Add(new ExportIconCtl { Dock = DockStyle.Fill });
     }
 
     private void checkCRAConnectionToolStripMenuItem_Click(object sender, EventArgs e)

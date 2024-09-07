@@ -28,17 +28,18 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             mainTabs = new TabControl();
             tabCreateIcon = new TabPage();
-            tabExportIcon = new TabPage();
+            tabExtractIcon = new TabPage();
             menuStrip1 = new MenuStrip();
             resetTabToolStripMenuItem = new ToolStripMenuItem();
             createIconToolStripMenuItem = new ToolStripMenuItem();
             exportIconToolStripMenuItem = new ToolStripMenuItem();
-            helpToolStripMenuItem = new ToolStripMenuItem();
-            checkForUpdatesToolStripMenuItem = new ToolStripMenuItem();
             cRAIntegrationToolStripMenuItem = new ToolStripMenuItem();
             checkCRAConnectionToolStripMenuItem = new ToolStripMenuItem();
+            helpToolStripMenuItem = new ToolStripMenuItem();
+            checkForUpdatesToolStripMenuItem = new ToolStripMenuItem();
             mainTabs.SuspendLayout();
             menuStrip1.SuspendLayout();
             SuspendLayout();
@@ -46,7 +47,7 @@
             // mainTabs
             // 
             mainTabs.Controls.Add(tabCreateIcon);
-            mainTabs.Controls.Add(tabExportIcon);
+            mainTabs.Controls.Add(tabExtractIcon);
             mainTabs.Dock = DockStyle.Fill;
             mainTabs.Location = new Point(0, 24);
             mainTabs.Name = "mainTabs";
@@ -64,15 +65,15 @@
             tabCreateIcon.Text = "Create Icon";
             tabCreateIcon.UseVisualStyleBackColor = true;
             // 
-            // tabExportIcon
+            // tabExtractIcon
             // 
-            tabExportIcon.Location = new Point(4, 24);
-            tabExportIcon.Name = "tabExportIcon";
-            tabExportIcon.Padding = new Padding(3);
-            tabExportIcon.Size = new Size(1082, 745);
-            tabExportIcon.TabIndex = 1;
-            tabExportIcon.Text = "Export Icon";
-            tabExportIcon.UseVisualStyleBackColor = true;
+            tabExtractIcon.Location = new Point(4, 24);
+            tabExtractIcon.Name = "tabExtractIcon";
+            tabExtractIcon.Padding = new Padding(3);
+            tabExtractIcon.Size = new Size(1082, 745);
+            tabExtractIcon.TabIndex = 1;
+            tabExtractIcon.Text = "Extract Icon";
+            tabExtractIcon.UseVisualStyleBackColor = true;
             // 
             // menuStrip1
             // 
@@ -102,19 +103,6 @@
             exportIconToolStripMenuItem.Size = new Size(134, 22);
             exportIconToolStripMenuItem.Text = "Export Icon";
             // 
-            // helpToolStripMenuItem
-            // 
-            helpToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { checkForUpdatesToolStripMenuItem });
-            helpToolStripMenuItem.Name = "helpToolStripMenuItem";
-            helpToolStripMenuItem.Size = new Size(44, 20);
-            helpToolStripMenuItem.Text = "Help";
-            // 
-            // checkForUpdatesToolStripMenuItem
-            // 
-            checkForUpdatesToolStripMenuItem.Name = "checkForUpdatesToolStripMenuItem";
-            checkForUpdatesToolStripMenuItem.Size = new Size(171, 22);
-            checkForUpdatesToolStripMenuItem.Text = "Check for Updates";
-            // 
             // cRAIntegrationToolStripMenuItem
             // 
             cRAIntegrationToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { checkCRAConnectionToolStripMenuItem });
@@ -129,6 +117,19 @@
             checkCRAConnectionToolStripMenuItem.Text = "Check CRA connection";
             checkCRAConnectionToolStripMenuItem.Click += checkCRAConnectionToolStripMenuItem_Click;
             // 
+            // helpToolStripMenuItem
+            // 
+            helpToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { checkForUpdatesToolStripMenuItem });
+            helpToolStripMenuItem.Name = "helpToolStripMenuItem";
+            helpToolStripMenuItem.Size = new Size(44, 20);
+            helpToolStripMenuItem.Text = "Help";
+            // 
+            // checkForUpdatesToolStripMenuItem
+            // 
+            checkForUpdatesToolStripMenuItem.Name = "checkForUpdatesToolStripMenuItem";
+            checkForUpdatesToolStripMenuItem.Size = new Size(171, 22);
+            checkForUpdatesToolStripMenuItem.Text = "Check for Updates";
+            // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -136,6 +137,7 @@
             ClientSize = new Size(1090, 797);
             Controls.Add(mainTabs);
             Controls.Add(menuStrip1);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             MainMenuStrip = menuStrip1;
             Name = "MainForm";
             StartPosition = FormStartPosition.CenterScreen;
@@ -152,7 +154,7 @@
 
         private TabControl mainTabs;
         private TabPage tabCreateIcon;
-        private TabPage tabExportIcon;
+        private TabPage tabExtractIcon;
         private MenuStrip menuStrip1;
         private ToolStripMenuItem helpToolStripMenuItem;
         private ToolStripMenuItem checkForUpdatesToolStripMenuItem;
