@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using AetherUtils.Core.Logging;
 using WolvenIconGenerator.Custom_Controls;
 using WolvenIconGenerator.Properties;
 using WolvenIconGenerator.Utility;
@@ -26,8 +28,8 @@ public partial class MainForm : Form
         _tabImages.ImageSize = new Size(16, 16);
         mainTabs.ImageList = _tabImages;
 
-        tabCreateIcon.ImageKey = "create";
-        tabExtractIcon.ImageKey = "extract";
+        tabCreateIcon.ImageKey = @"create";
+        tabExtractIcon.ImageKey = @"extract";
     }
 
     private void ResetTabs()
@@ -41,7 +43,7 @@ public partial class MainForm : Form
     private void ResetCreateTab()
     {
         tabCreateIcon.Controls.Clear();
-        tabCreateIcon.Controls.Add(new CreateIconCtl { Dock = DockStyle.Fill });
+        tabCreateIcon.Controls.Add(new IconCreator { Dock = DockStyle.Fill });
     }
 
     private void ResetExportTab()
@@ -56,5 +58,37 @@ public partial class MainForm : Form
         MessageBox.Show(isCraRunning ? "CRA is running and can be reached." : "CRA is not running.",
             isCraRunning ? "Communication Successful" : "Communication Failure",
             MessageBoxButtons.OK, isCraRunning ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+    }
+
+    private void createIconToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+        ResetCreateTab();
+    }
+
+    private void exportIconToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+        ResetExportTab();
+    }
+
+    private void openLogsToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            var logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "Wolven Icon Generator", "Logs");
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = logPath,
+                UseShellExecute = true,
+                Verb = "open"
+            };
+
+            Process.Start(startInfo);
+        } catch (Exception ex)
+        {
+            MessageBox.Show($"An error occurred while trying to open the logs folder.\n\n{ex.Message}", "Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            AuLogger.GetCurrentLogger<MainForm>().Error(ex, "Error while trying to open the logs folder.");
+        }
     }
 }

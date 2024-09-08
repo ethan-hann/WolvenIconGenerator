@@ -40,6 +40,7 @@
             checkCRAConnectionToolStripMenuItem = new ToolStripMenuItem();
             helpToolStripMenuItem = new ToolStripMenuItem();
             checkForUpdatesToolStripMenuItem = new ToolStripMenuItem();
+            openLogsToolStripMenuItem = new ToolStripMenuItem();
             mainTabs.SuspendLayout();
             menuStrip1.SuspendLayout();
             SuspendLayout();
@@ -96,12 +97,14 @@
             createIconToolStripMenuItem.Name = "createIconToolStripMenuItem";
             createIconToolStripMenuItem.Size = new Size(134, 22);
             createIconToolStripMenuItem.Text = "Create Icon";
+            createIconToolStripMenuItem.Click += createIconToolStripMenuItem_Click;
             // 
             // exportIconToolStripMenuItem
             // 
             exportIconToolStripMenuItem.Name = "exportIconToolStripMenuItem";
             exportIconToolStripMenuItem.Size = new Size(134, 22);
             exportIconToolStripMenuItem.Text = "Export Icon";
+            exportIconToolStripMenuItem.Click += exportIconToolStripMenuItem_Click;
             // 
             // cRAIntegrationToolStripMenuItem
             // 
@@ -119,7 +122,7 @@
             // 
             // helpToolStripMenuItem
             // 
-            helpToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { checkForUpdatesToolStripMenuItem });
+            helpToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { checkForUpdatesToolStripMenuItem, openLogsToolStripMenuItem });
             helpToolStripMenuItem.Name = "helpToolStripMenuItem";
             helpToolStripMenuItem.Size = new Size(44, 20);
             helpToolStripMenuItem.Text = "Help";
@@ -127,8 +130,15 @@
             // checkForUpdatesToolStripMenuItem
             // 
             checkForUpdatesToolStripMenuItem.Name = "checkForUpdatesToolStripMenuItem";
-            checkForUpdatesToolStripMenuItem.Size = new Size(171, 22);
+            checkForUpdatesToolStripMenuItem.Size = new Size(180, 22);
             checkForUpdatesToolStripMenuItem.Text = "Check for Updates";
+            // 
+            // openLogsToolStripMenuItem
+            // 
+            openLogsToolStripMenuItem.Name = "openLogsToolStripMenuItem";
+            openLogsToolStripMenuItem.Size = new Size(180, 22);
+            openLogsToolStripMenuItem.Text = "Open Logs";
+            openLogsToolStripMenuItem.Click += openLogsToolStripMenuItem_Click;
             // 
             // MainForm
             // 
@@ -163,5 +173,6 @@
         private ToolStripMenuItem exportIconToolStripMenuItem;
         private ToolStripMenuItem cRAIntegrationToolStripMenuItem;
         private ToolStripMenuItem checkCRAConnectionToolStripMenuItem;
+        private ToolStripMenuItem openLogsToolStripMenuItem;
     }
 }

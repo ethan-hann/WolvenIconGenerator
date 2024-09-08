@@ -100,7 +100,7 @@ public partial class SplashScreen : Form
                 "Wolven Icon Generator", "Logs"),
             NewFileEveryLaunch = true,
             IncludeDateTime = true,
-            LogHeader = $"Wolven Icon Generator - {ProductVersion}"
+            LogHeader = $"Wolven Icon Generator - {lblVersion.Text}"
         };
 
         AuLogger.Initialize(logOptions);
