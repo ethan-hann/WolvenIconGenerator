@@ -278,7 +278,7 @@ public partial class IconCreator : UserControl
             SetProgressPercentage(0);
         });
 
-        var icon = IconManager.Instance.ImportIconImageAsync(_imagePath, txtAtlasName.Text, _outputPath).Result;
+        var icon = IconManager.Instance.GenerateIconImageAsync(_imagePath, txtAtlasName.Text, _outputPath).Result;
         if (icon == null)
             AddStatusRow("Failed to import icon.");
         else

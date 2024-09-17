@@ -12,12 +12,13 @@ namespace WIG.Lib.Models
     {
         public event PropertyChangedEventHandler? PropertyChanged;
 
+        private string? _atlasName = "custom_icon_atlas";
         private string? _imagePath = "\\path\\to\\custom\\image\\file";
         private string? _archivePath = "\\path\\to\\archive\\file";
         private string? _iconName = "custom_icon";
         private string? _sha256HashOfArchiveFile = string.Empty;
 
-        private RadioExtCustomIcon? _customIcon;
+        private RadioExtCustomIcon _customIcon = new();
 
         private bool _isActive;
 
@@ -64,6 +65,20 @@ namespace WIG.Lib.Models
         }
 
         /// <summary>
+        /// The name of the atlas that the icon is stored in.
+        /// </summary>
+        [JsonProperty("atlasName")]
+        public string? AtlasName
+        {
+            get => _atlasName;
+            set
+            {
+                _atlasName = value;
+                OnPropertyChanged(nameof(AtlasName));
+            }
+        }
+
+        /// <summary>
         /// The name of the icon. Does not have to be unique.
         /// </summary>
         [JsonProperty("iconName")]
@@ -92,7 +107,7 @@ namespace WIG.Lib.Models
         }
 
         [JsonProperty("customIcon")]
-        public RadioExtCustomIcon? CustomIcon
+        public RadioExtCustomIcon CustomIcon
         {
             get => _customIcon;
             set
