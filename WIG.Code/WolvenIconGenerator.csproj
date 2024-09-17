@@ -13,15 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Tools\InkAtlas\generate_inkatlas.exe" />
-  </ItemGroup>
-
-  <ItemGroup>
     <EmbeddedResource Include="Resources\wolvenIconGeneratorLogo.ico" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Tools\InkAtlas\generate_inkatlas.exe" />
   </ItemGroup>
 
   <ItemGroup>
@@ -43,6 +35,10 @@
     <PackageReference Include="AetherUtils.Core" Version="1.0.8" />
     <PackageReference Include="SharpCompress" Version="0.38.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WIG.Lib\WIG.Lib.csproj" />
   </ItemGroup>
 
 </Project>

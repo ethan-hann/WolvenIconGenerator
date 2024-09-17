@@ -1,14 +1,14 @@
 ﻿using AetherUtils.Core.Logging;
 using Newtonsoft.Json;
 using System.ComponentModel;
-using WolvenIconGenerator.Utility;
+using WIG.Lib.Utility;
 
-namespace WolvenIconGenerator.Models
+namespace WIG.Lib.Models
 {
     /// <summary>
     /// Represents an Icon that was created by the user or extracted from an imported <c>.archive</c> file.
     /// </summary>
-    public class Icon : INotifyPropertyChanged, ICloneable, IEquatable<Icon>
+    public class WolvenIcon : INotifyPropertyChanged, ICloneable, IEquatable<WolvenIcon>
     {
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -110,18 +110,18 @@ namespace WolvenIconGenerator.Models
         /// <summary>
         /// Empty constructor for JSON deserialization.
         /// </summary>
-        public Icon() { }
+        public WolvenIcon() { }
 
         /// <summary>
         /// Create a new Icon object from a path to a <c>.png</c> image file.
         /// </summary>
         /// <param name="imagePath">The path to the image on disk.</param>
-        public static Icon FromPath(string imagePath)
+        public static WolvenIcon FromPath(string imagePath)
         {
-            return new Icon(imagePath);
+            return new WolvenIcon(imagePath);
         }
 
-        private Icon(string imagePath)
+        private WolvenIcon(string imagePath)
         {
             try
             {
@@ -134,7 +134,7 @@ namespace WolvenIconGenerator.Models
             }
             catch (Exception e)
             {
-                AuLogger.GetCurrentLogger<Icon>().Error(e);
+                AuLogger.GetCurrentLogger<WolvenIcon>().Error(e);
             }
         }
 
@@ -143,7 +143,7 @@ namespace WolvenIconGenerator.Models
         /// </summary>
         /// <param name="imagePath">The path to the <c>.png</c> file for this icon.</param>
         /// <param name="archivePath">The path to the <c>.archive</c> file for this icon.</param>
-        public Icon(string imagePath, string archivePath)
+        public WolvenIcon(string imagePath, string archivePath)
         {
             ImagePath = imagePath;
             ArchivePath = archivePath;
@@ -156,7 +156,7 @@ namespace WolvenIconGenerator.Models
         /// <param name="imagePath">The path to the <c>.png</c> file for this icon.</param>
         /// <param name="archivePath">The path to the <c>.archive</c> file for this icon.</param>
         /// <param name="iconName">The name of the icon. Does not need to be unique.</param>
-        public Icon(string imagePath, string archivePath, string iconName) :
+        public WolvenIcon(string imagePath, string archivePath, string iconName) :
             this(imagePath, archivePath)
         {
             IconName = iconName;
@@ -182,7 +182,7 @@ namespace WolvenIconGenerator.Models
             }
             catch (Exception e)
             {
-                AuLogger.GetCurrentLogger<Icon>("EnsureImage").Error(e);
+                AuLogger.GetCurrentLogger<WolvenIcon>("EnsureImage").Error(e);
             }
             return false;
         }
@@ -203,7 +203,7 @@ namespace WolvenIconGenerator.Models
 
         public object Clone()
         {
-            return new Icon()
+            return new WolvenIcon()
             {
                 ImagePath = _imagePath,
                 IconName = _iconName,
@@ -214,10 +214,10 @@ namespace WolvenIconGenerator.Models
 
         public override bool Equals(object? obj)
         {
-            return Equals(obj as Icon);
+            return Equals(obj as WolvenIcon);
         }
 
-        public bool Equals(Icon? other)
+        public bool Equals(WolvenIcon? other)
         {
             if (other == null) return false;
             return ImagePath == other.ImagePath &&

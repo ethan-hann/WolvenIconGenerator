@@ -1,6 +1,6 @@
 ﻿using System.Security.Cryptography;
 
-namespace WolvenIconGenerator.Utility
+namespace WIG.Lib.Utility
 {
     public sealed class HashUtils
     {

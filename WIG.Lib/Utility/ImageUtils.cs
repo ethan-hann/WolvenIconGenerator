@@ -1,6 +1,6 @@
 ﻿using AetherUtils.Core.Logging;
 
-namespace WolvenIconGenerator.Utility
+namespace WIG.Lib.Utility
 {
     public sealed class ImageUtils
     {

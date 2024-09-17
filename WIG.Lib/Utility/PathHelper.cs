@@ -6,7 +6,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Image = SixLabors.ImageSharp.Image;
 
-namespace WolvenIconGenerator.Utility;
+namespace WIG.Lib.Utility;
 
 public class PathHelper
 {

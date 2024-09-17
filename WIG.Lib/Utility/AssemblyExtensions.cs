@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace WolvenIconGenerator.Utility
+namespace WIG.Lib.Utility
 {
     public static class AssemblyExtensions
     {

@@ -1,6 +1,7 @@
 ﻿using AetherUtils.Core.Configuration;
 using AetherUtils.Core.Logging;
 using System.Reflection;
+using WIG.Lib.Utility;
 using WolvenIconGenerator.Utility;
 
 namespace WolvenIconGenerator.Forms;

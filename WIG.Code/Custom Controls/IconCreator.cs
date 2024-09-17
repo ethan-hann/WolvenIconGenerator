@@ -1,16 +1,17 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using AetherUtils.Core.Logging;
+using WIG.Lib.Models;
+using WIG.Lib.Utility;
 using WolvenIconGenerator.Utility;
-using Icon = WolvenIconGenerator.Models.Icon;
 
 namespace WolvenIconGenerator.Custom_Controls;
 
 public partial class IconCreator : UserControl
 {
     private int _currentTabIndex = 0;
-    private Icon? _icon;
-    private Icon? _previousIcon;
+    private WolvenIcon? _icon;
+    private WolvenIcon? _previousIcon;
     private string _imagePath = string.Empty;
     private Image? _iconImage;
     private string _outputPath = string.Empty;

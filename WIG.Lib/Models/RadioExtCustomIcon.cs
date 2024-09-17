@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.ComponentModel;
 
-namespace WolvenIconGenerator.Models
+namespace WIG.Lib.Models
 {
     public class RadioExtCustomIcon : INotifyPropertyChanged, ICloneable, IEquatable<RadioExtCustomIcon>
     {

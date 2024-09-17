@@ -2,6 +2,7 @@
 using AetherUtils.Core.Logging;
 using System.Diagnostics;
 using System.IO.Pipes;
+using WIG.Lib.Models;
 
 namespace WolvenIconGenerator.Utility
 {
@@ -10,13 +11,13 @@ namespace WolvenIconGenerator.Utility
     /// </summary>
     public sealed class CraIntegration
     {
-        private static readonly Json<Models.Icon> JsonSerializer = new();
+        private static readonly Json<WolvenIcon> JsonSerializer = new();
 
         /// <summary>
         /// Send the specified icon to the Cyber Radio Assistant (CRA) application. If CRA is not running, the icon will not be sent and a warning will be logged.
         /// </summary>
         /// <param name="icon">The icon to send.</param>
-        public static void SendIconToCra(Models.Icon icon)
+        public static void SendIconToCra(WolvenIcon icon)
         {
             if (!IsCraRunning())
             {

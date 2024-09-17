@@ -1,9 +1,8 @@
 ﻿using AetherUtils.Core.Logging;
 using System.Reflection;
-using WolvenIconGenerator.Models;
-using Icon = WolvenIconGenerator.Models.Icon;
+using WIG.Lib.Models;
 
-namespace WolvenIconGenerator.Utility;
+namespace WIG.Lib.Utility;
 
 /// <summary>
 /// Manager class responsible for handling the generation and management of custom icons.
@@ -339,8 +338,8 @@ public class IconManager : IDisposable
     /// <param name="atlasName">The name that icon atlas will be generated with.</param>
     /// <param name="outputPath">The path that the final <c>.archive</c> file should be saved to.</param>
     /// <param name="overwrite">Indicates whether existing directories should be overwritten if they exist.</param>
-    /// <returns>A task that when complete contains an <see cref="Icon"/> or <c>null</c> if the import failed.</returns>
-    public async Task<Icon?> ImportIconImageAsync(string imagePath, string atlasName, string outputPath, bool overwrite = true)
+    /// <returns>A task that when complete contains an <see cref="WolvenIcon"/> or <c>null</c> if the import failed.</returns>
+    public async Task<WolvenIcon?> ImportIconImageAsync(string imagePath, string atlasName, string outputPath, bool overwrite = true)
     {
         if (!IsInitialized)
             throw new InvalidOperationException("The icon manager has not been initialized.");
@@ -351,7 +350,7 @@ public class IconManager : IDisposable
         try
         {
             OnIconImportStarted(new StatusEventArgs("The icon import operation has started.", false, _currentProgress));
-            Icon? icon = null;
+            WolvenIcon? icon = null;
 
             await Task.Run(async () =>
             {
@@ -381,7 +380,7 @@ public class IconManager : IDisposable
         return null;
     }
 
-    private async Task<Icon> CreateIcon(string imagePath, string atlasName, string outputPath, bool overwrite, CancellationToken token)
+    private async Task<WolvenIcon> CreateIcon(string imagePath, string atlasName, string outputPath, bool overwrite, CancellationToken token)
     {
         if (!IsInitialized)
         {
@@ -468,7 +467,7 @@ public class IconManager : IDisposable
         File.Copy(newArchivePath, finalOutputPath, overwrite);
 
         //Finally, create the icon object and return it
-        var icon = new Icon(projectImagePath, finalOutputPath, atlasName)
+        var icon = new WolvenIcon(projectImagePath, finalOutputPath, atlasName)
         {
             CustomIcon = new RadioExtCustomIcon()
             {

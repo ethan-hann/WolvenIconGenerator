@@ -1,4 +1,4 @@
-﻿namespace WolvenIconGenerator.Utility;
+﻿namespace WIG.Lib.Utility;
 
 public class StatusEventArgs(string message, bool isError, int progress)
 {
