@@ -5,15 +5,9 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyVersion>1.0.11.0</AssemblyVersion>
+    <FileVersion>1.0.11.0</FileVersion>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="Tools\InkAtlas\generate_inkatlas.exe" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Tools\InkAtlas\generate_inkatlas.exe" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="AetherUtils.Core" Version="1.0.8" />

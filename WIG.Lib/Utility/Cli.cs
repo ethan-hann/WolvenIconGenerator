@@ -18,8 +18,6 @@ internal class Cli(string executablePath)
     /// </summary>
     public event EventHandler<string?>? ErrorChanged;
 
-    private readonly string _executableName = Path.GetFileName(executablePath);
-
     #region generate-inkatlas.exe
     /// <summary>
     /// Generate an .inkatlas file from a folder of images.

@@ -203,6 +203,18 @@ namespace WIG.Lib.Models
         }
 
         /// <summary>
+        /// Performs a check on the icon's properties to ensure they are valid (not null and/or empty).
+        /// </summary>
+        /// <returns><c>true</c> if the icon is valid; <c>false</c> otherwise.</returns>
+        public bool CheckIconValid()
+        {
+            var isValid = !string.IsNullOrEmpty(ImagePath) && !string.IsNullOrEmpty(ArchivePath) && !string.IsNullOrEmpty(Sha256HashOfArchiveFile);
+            isValid &= Path.Exists(ArchivePath);
+            isValid &= Path.Exists(ImagePath);
+            return isValid;
+        }
+
+        /// <summary>
         /// Get a string representation of the icon in the format: <c>{IconName}: {IconId}</c>.
         /// </summary>
         /// <returns>The string representation of the icon.</returns>

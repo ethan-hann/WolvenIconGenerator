@@ -1,6 +1,7 @@
 ﻿using AetherUtils.Core.Logging;
 using System.Reflection;
 using WIG.Lib.Models;
+using WIG.Lib.Tools.InkAtlas;
 
 namespace WIG.Lib.Utility;
 
@@ -17,13 +18,12 @@ public class IconManager : IDisposable
     private static IconManager? _instance;
 
     private string _wolvenKitCliDownloadUrl = string.Empty;
-    private string _inkAtlasExe = string.Empty;
     private string _wolvenKitCliExe = string.Empty;
     private bool _isWolvenKitDownloaded;
     private bool _isWolvenKitExtracted;
     private CancellationTokenSource? _cancellationTokenSource;
 
-    private Cli? _inkAtlasCli;
+    private readonly InkAtlasGenerator? _inkAtlasGenerator;
     private Cli? _wolvenKitCli;
 
     public static IconManager Instance
@@ -87,6 +87,10 @@ public class IconManager : IDisposable
         {
             if (_instance != null)
                 throw new InvalidOperationException("An instance of IconManager already exists. Use IconManager.Instance to access it.");
+
+            _inkAtlasGenerator = new InkAtlasGenerator();
+            _inkAtlasGenerator.OutputChanged += InkAtlasGenerator_OutputChanged;
+            _inkAtlasGenerator.ErrorChanged += InkAtlasGenerator_ErrorChanged;
         }
         catch (Exception e)
         {
@@ -131,7 +135,7 @@ public class IconManager : IDisposable
             SetupRequiredPaths();
 
             _wolvenKitCliDownloadUrl = $"https://github.com/WolvenKit/WolvenKit/releases/download/{WolvenKitVersion}/WolvenKit.Console-{WolvenKitVersion}.zip";
-            _inkAtlasExe = Assembly.GetExecutingAssembly().ExtractEmbeddedResource("WIG.Lib.Tools.InkAtlas.generate_inkatlas.exe");
+            //_inkAtlasExe = Assembly.GetExecutingAssembly().ExtractEmbeddedResource("WIG.Lib.Tools.InkAtlas.generate_inkatlas.exe");
 
             if (WolvenKitTempDirectory == null)
                 throw new InvalidOperationException("The WolvenKit temp directory is null.");
@@ -140,15 +144,8 @@ public class IconManager : IDisposable
 
             await DownloadWolvenKitIfRequiredAsync();
 
-            if (!File.Exists(_inkAtlasExe))
-                throw new FileNotFoundException("The inkatlas executable could not be found.", _inkAtlasExe);
-
             if (!File.Exists(_wolvenKitCliExe))
                 throw new FileNotFoundException("The WolvenKit CLI executable could not be found.", _wolvenKitCliExe);
-
-            _inkAtlasCli = new Cli(_inkAtlasExe);
-            _inkAtlasCli.ErrorChanged += InkAtlasCli_ErrorChanged;
-            _inkAtlasCli.OutputChanged += InkAtlasCli_OutputChanged;
 
             _wolvenKitCli = new Cli(_wolvenKitCliExe);
             _wolvenKitCli.ErrorChanged += WolvenKitCli_ErrorChanged;
@@ -370,11 +367,11 @@ public class IconManager : IDisposable
             AuLogger.GetCurrentLogger<IconManager>("ImportIconImageAsync").Info("The icon import operation was cancelled.");
             OnIconImportStatus(new StatusEventArgs("The icon import operation was cancelled.", false, _currentProgress));
         }
-        catch (Exception e)
-        {
-            AuLogger.GetCurrentLogger<IconManager>("ImportIconAsync").Error(e.Message);
-            OnIconImportStatus(new StatusEventArgs(e.Message, true, _currentProgress));
-        }
+        //catch (Exception e)
+        //{
+        //    AuLogger.GetCurrentLogger<IconManager>("ImportIconAsync").Error(e.Message);
+        //    OnIconImportStatus(new StatusEventArgs(e.Message, true, _currentProgress));
+        //}
         finally
         {
             _cancellationTokenSource?.Dispose();
@@ -420,21 +417,24 @@ public class IconManager : IDisposable
         _currentProgress += 2;
         token.ThrowIfCancellationRequested();
 
-        //Copy the image to the images folder for the project
+        // Copy the image to the images folder for the project
         var imageFileName = Path.GetFileName(imagePath);
         var projectImagePath = Path.Combine(projectDirectories["importedPngs"], imageFileName);
         File.Copy(imagePath, projectImagePath, overwrite);
 
-        if (_inkAtlasExe.Equals(string.Empty) || _inkAtlasCli == null)
-        {
-            OnIconImportStatus(new StatusEventArgs("The inkatlas executable could not be found.", true, _currentProgress));
-            CancelOperation();
-        }
+        //if (_inkAtlasExe.Equals(string.Empty) || _inkAtlasCli == null)
+        //{
+        //    OnIconImportStatus(new StatusEventArgs("The inkatlas executable could not be found.", true, _currentProgress));
+        //    CancelOperation();
+        //}
         _currentProgress += 2;
         token.ThrowIfCancellationRequested();
 
-        //Generate .archive file
-        await _inkAtlasCli.GenerateInkAtlasJsonAsync(projectDirectories["importedPngs"], projectDirectories["projectRawPath"], atlasName);
+        // Use InkAtlasGenerator to generate the .inkatlas.json and images
+        await _inkAtlasGenerator.GenerateInkAtlasJsonAsync(projectDirectories["importedPngs"], projectDirectories["projectRawPath"], atlasName);
+
+        ////Generate .archive file
+        //await _inkAtlasCli.GenerateInkAtlasJsonAsync(projectDirectories["importedPngs"], projectDirectories["projectRawPath"], atlasName);
 
         _currentProgress += 2;
         token.ThrowIfCancellationRequested();
@@ -512,14 +512,14 @@ public class IconManager : IDisposable
         }
     }
 
-    private void InkAtlasCli_OutputChanged(object? sender, string? e)
+    private void InkAtlasGenerator_OutputChanged(object? sender, string? e)
     {
         _currentProgress += 2;
         if (e != null)
             OnIconImportStatus(new StatusEventArgs(e, false, _currentProgress));
     }
 
-    private void InkAtlasCli_ErrorChanged(object? sender, string? e)
+    private void InkAtlasGenerator_ErrorChanged(object? sender, string? e)
     {
         if (e != null)
             OnIconImportStatus(new StatusEventArgs(e, true, _currentProgress));
