@@ -106,6 +106,9 @@ namespace WIG.Lib.Models
             }
         }
 
+        /// <summary>
+        /// The custom icon object needed by RadioExt to reference the icon in game.
+        /// </summary>
         [JsonProperty("customIcon")]
         public RadioExtCustomIcon CustomIcon
         {
