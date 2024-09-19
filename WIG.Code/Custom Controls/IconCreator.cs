@@ -1,6 +1,6 @@
-﻿using System.ComponentModel;
+﻿using AetherUtils.Core.Logging;
+using System.ComponentModel;
 using System.Diagnostics;
-using AetherUtils.Core.Logging;
 using WIG.Lib.Models;
 using WIG.Lib.Utility;
 using WolvenIconGenerator.Utility;
@@ -278,11 +278,15 @@ public partial class IconCreator : UserControl
             SetProgressPercentage(0);
         });
 
-        var icon = IconManager.Instance.GenerateIconImageAsync(_imagePath, txtAtlasName.Text, _outputPath).Result;
+        var icon = IconManager.Instance.GenerateIconImageAsync(_imagePath, txtAtlasName.Text).Result;
         if (icon == null)
             AddStatusRow("Failed to import icon.");
         else
+        {
             _icon = icon;
+            if (icon.ArchivePath != null)
+                File.Copy(icon.ArchivePath, txtOutputPath.Text);
+        }
     }
 
     private void BgCreateIconWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -306,7 +310,8 @@ public partial class IconCreator : UserControl
         try
         {
             Clipboard.SetText(txtImagePath.Text, TextDataFormat.Text);
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             AuLogger.GetCurrentLogger<IconCreator>().Error(ex);
         }
@@ -317,7 +322,8 @@ public partial class IconCreator : UserControl
         try
         {
             Clipboard.SetText(txtArchivePath.Text, TextDataFormat.Text);
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             AuLogger.GetCurrentLogger<IconCreator>().Error(ex);
         }
@@ -328,7 +334,8 @@ public partial class IconCreator : UserControl
         try
         {
             Clipboard.SetText(txtSha256Hash.Text, TextDataFormat.Text);
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             AuLogger.GetCurrentLogger<IconCreator>().Error(ex);
         }
@@ -339,7 +346,8 @@ public partial class IconCreator : UserControl
         try
         {
             Clipboard.SetText(txtIconPath.Text, TextDataFormat.Text);
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             AuLogger.GetCurrentLogger<IconCreator>().Error(ex);
         }
@@ -350,7 +358,8 @@ public partial class IconCreator : UserControl
         try
         {
             Clipboard.SetText(txtIconPart.Text, TextDataFormat.Text);
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             AuLogger.GetCurrentLogger<IconCreator>().Error(ex);
         }

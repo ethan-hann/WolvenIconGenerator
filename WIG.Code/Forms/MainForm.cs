@@ -1,5 +1,5 @@
-using System.Diagnostics;
 using AetherUtils.Core.Logging;
+using System.Diagnostics;
 using WolvenIconGenerator.Custom_Controls;
 using WolvenIconGenerator.Properties;
 using WolvenIconGenerator.Utility;
@@ -84,7 +84,8 @@ public partial class MainForm : Form
             };
 
             Process.Start(startInfo);
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             MessageBox.Show($"An error occurred while trying to open the logs folder.\n\n{ex.Message}", "Error",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);

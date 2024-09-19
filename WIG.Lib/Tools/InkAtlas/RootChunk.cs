@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
 namespace WIG.Lib.Tools.InkAtlas;
 
@@ -37,7 +32,7 @@ internal class RootChunk
     public Slots Slots { get; set; } = new();
 
     [JsonProperty("texture")]
-    public Texture Texture { get; set; } = new() { DepotPath = new DepotPath() { Storage = "string", Value = "" }, Flags = "Default"};
+    public Texture Texture { get; set; } = new() { DepotPath = new DepotPath() { Storage = "string", Value = "" }, Flags = "Default" };
 
     [JsonProperty("textureResolution")]
     public string TextureResolution { get; set; } = "UltraHD_3840_2160";

@@ -1,5 +1,4 @@
-﻿using AetherUtils.Core.Logging;
-using System.Reflection;
+using AetherUtils.Core.Logging;
 using WIG.Lib.Models;
 using WIG.Lib.Tools.InkAtlas;
 
@@ -186,12 +185,12 @@ public class IconManager : IDisposable
     /// <param name="overwrite">Indicates whether existing directories should be overwritten if they exist.</param>
     /// <returns>A dictionary where the key is the type of project folder and the value is the folder path.
     /// <list type="bullet">
-    ///     <item>"iconID" - the unique identifier used to reference the icon.</item>
-    ///     <item>"importedPngs" - input to the generate ink atlas json function: <c>tools\\imported\\{stationID}\\atlasName</c>.</item>
-    ///     <item>"iconFiles" - output folder for the converted .inkatlas and .xbm files: <c>tools\\atlasName\\archive\\base\\icon</c>.</item>
-    ///     <item>"projectBasePath" - the faux project's base path: <c>tools\\atlasName</c></item>
-    ///     <item>"projectRawPath" - the faux project's raw path: <c>tools\\atlasName\\source\\raw</c>.</item>
-    ///     <item>"archiveBasePath" - the base path to the archive folder within the project: <c>tools\\atlasName\\archive</c></item>
+    ///     <item>"importedPngs" - the path that imported PNGs are stored: %APPDATA%\Wolven Icon Generator\tools\imported\{atlasName-iconId}.</item>
+    ///     <item>"projectBasePath" - the base path for the project: %APPDATA%\Wolven Icon Generator\tools\{atlasName}.</item>
+    ///     <item>"archiveBasePath" - the base path for the REDEngine files: %APPDATA%\Wolven Icon Generator\tools\{atlasName}\source\archive.</item>
+    ///     <item>"redEngineFilesPath" - the path to the REDEngine files: %APPDATA%\Wolven Icon Generator\tools\{atlasName}\source\archive\base\icon.</item>
+    ///     <item>"rawFilesBasePath" - the base path for the raw files: %APPDATA%\Wolven Icon Generator\tools\{atlasName}\source\raw.</item>
+    ///     <item>"rawFilesPath" - the path to the raw (non-REDEngine) files: %APPDATA%\Wolven Icon Generator\tools\{atlasName}\source\raw\base\icon.</item>
     /// </list>
     /// If any of the directories could not be created or an error occurred, an empty dictionary is returned.
     /// </returns>
@@ -214,27 +213,40 @@ public class IconManager : IDisposable
             Directory.CreateDirectory(importedPngsPath);
             outputDictionary["importedPngs"] = importedPngsPath;
 
-            //Create the project's base path; also the folder for the final .archive file to be stored.
+            //Create the base path for the project: %APPDATA%\Wolven Icon Generator\tools\{atlasName}
             var projectBasePath = Path.Combine(WorkingDirectory, "tools", atlasName);
             if (overwrite && Directory.Exists(projectBasePath))
                 Directory.Delete(projectBasePath, true);
             Directory.CreateDirectory(projectBasePath);
             outputDictionary["projectBasePath"] = projectBasePath;
 
-            //Create the path for the .inkatlas and .xbm files to be stored in.
-            var iconFilesPath = Path.Combine(projectBasePath, "archive", "base", "icon");
-            if (overwrite && Directory.Exists(iconFilesPath))
-                Directory.Delete(iconFilesPath, true);
-            Directory.CreateDirectory(iconFilesPath);
-            outputDictionary["iconFiles"] = iconFilesPath;
-            outputDictionary["archiveBasePath"] = Path.Combine(projectBasePath, "archive");
+            //Create the base path for the REDEngine files: %APPDATA%\Wolven Icon Generator\tools\{atlasName}\source\archive
+            var archiveBasePath = Path.Combine(projectBasePath, "source", "archive");
+            if (overwrite && Directory.Exists(archiveBasePath))
+                Directory.Delete(archiveBasePath, true);
+            Directory.CreateDirectory(archiveBasePath);
+            outputDictionary["archiveBasePath"] = archiveBasePath;
 
-            //Create the path that the import project files will be stored: %APPDATA%\Wolven Icon Generator\tools\{atlasName}\source\raw
-            var projectRawPath = Path.Combine(projectBasePath, "source", "raw");
-            if (overwrite && Directory.Exists(projectRawPath))
-                Directory.Delete(projectRawPath, true);
-            Directory.CreateDirectory(projectRawPath);
-            outputDictionary["projectRawPath"] = projectRawPath;
+            //Create the path to the REDEngine files: %APPDATA%\Wolven Icon Generator\tools\{atlasName}\source\archive\base\icon
+            var redEngineFilesPath = Path.Combine(archiveBasePath, "base", "icon");
+            if (overwrite && Directory.Exists(redEngineFilesPath))
+                Directory.Delete(redEngineFilesPath, true);
+            Directory.CreateDirectory(redEngineFilesPath);
+            outputDictionary["redEngineFilesPath"] = redEngineFilesPath;
+
+            //Create the base path for the raw files: %APPDATA%\Wolven Icon Generator\tools\{atlasName}\source\raw
+            var rawFilesBasePath = Path.Combine(projectBasePath, "source", "raw");
+            if (overwrite && Directory.Exists(rawFilesBasePath))
+                Directory.Delete(rawFilesBasePath, true);
+            Directory.CreateDirectory(rawFilesBasePath);
+            outputDictionary["rawFilesBasePath"] = rawFilesBasePath;
+
+            //Create the path to the raw (non-REDEngine) files: %APPDATA%\Wolven Icon Generator\tools\{atlasName}\source\raw\base\icon
+            var rawFilesPath = Path.Combine(rawFilesBasePath, "base", "icon");
+            if (overwrite && Directory.Exists(rawFilesPath))
+                Directory.Delete(rawFilesPath, true);
+            Directory.CreateDirectory(rawFilesPath);
+            outputDictionary["rawFilesPath"] = rawFilesPath;
 
             return outputDictionary;
         }
@@ -315,11 +327,13 @@ public class IconManager : IDisposable
             throw new InvalidOperationException("The WolvenKit temp directory is null.");
 
         await PathHelper.ExtractZipFileAsync(zipFile, WolvenKitTempDirectory);
+
         if (File.Exists(_wolvenKitCliExe))
         {
             _isWolvenKitExtracted = true;
             AuLogger.GetCurrentLogger<IconManager>().Info("WolvenKit CLI extracted successfully.");
         }
+
         return _isWolvenKitExtracted;
     }
 
@@ -330,14 +344,15 @@ public class IconManager : IDisposable
     private int _currentProgress;
 
     /// <summary>
-    /// Generate a <c>.archive</c> file from a PNG image. This method will create a faux project, generate the necessary files, and pack them into a <c>.archive</c> file.
+    /// Generate a <c>.archive</c> file from a PNG image.
+    /// This method will create a faux project, generate the necessary files, and pack them into a <c>.archive</c> file.
+    /// <para>The resulting <c>.archive</c> file path can then be referenced using the <see cref="WolvenIcon"/> object created: <see cref="WolvenIcon.ArchivePath"/></para>
     /// </summary>
     /// <param name="imagePath">The path to the image file on disk.</param>
     /// <param name="atlasName">The name that icon atlas will be generated with.</param>
-    /// <param name="outputPath">The path that the final <c>.archive</c> file should be saved to.</param>
     /// <param name="overwrite">Indicates whether existing directories should be overwritten if they exist.</param>
     /// <returns>A task that when complete contains an <see cref="WolvenIcon"/> or <c>null</c> if the import failed.</returns>
-    public async Task<WolvenIcon?> GenerateIconImageAsync(string imagePath, string atlasName, string outputPath, bool overwrite = true)
+    public async Task<WolvenIcon?> GenerateIconImageAsync(string imagePath, string atlasName, bool overwrite = true)
     {
         if (!IsInitialized)
             throw new InvalidOperationException("The icon manager has not been initialized.");
@@ -347,13 +362,13 @@ public class IconManager : IDisposable
 
         try
         {
-            AuLogger.GetCurrentLogger<IconManager>("ImportIconImageAsync").Info("The icon import operation has started.");
+            AuLogger.GetCurrentLogger<IconManager>("GenerateIconImageAsync").Info("The icon import operation has started.");
             OnIconImportStarted(new StatusEventArgs("The icon import operation has started.", false, _currentProgress));
             WolvenIcon? icon = null;
 
             await Task.Run(async () =>
             {
-                icon = await CreateIcon(imagePath, atlasName, outputPath, overwrite, token);
+                icon = await CreateIcon(imagePath, atlasName, overwrite, token);
                 if (icon == null)
                     throw new InvalidOperationException("The icon could not be created.");
             }, token);
@@ -364,14 +379,14 @@ public class IconManager : IDisposable
         }
         catch (OperationCanceledException)
         {
-            AuLogger.GetCurrentLogger<IconManager>("ImportIconImageAsync").Info("The icon import operation was cancelled.");
+            AuLogger.GetCurrentLogger<IconManager>("GenerateIconImageAsync").Info("The icon import operation was cancelled.");
             OnIconImportStatus(new StatusEventArgs("The icon import operation was cancelled.", false, _currentProgress));
         }
-        //catch (Exception e)
-        //{
-        //    AuLogger.GetCurrentLogger<IconManager>("ImportIconAsync").Error(e.Message);
-        //    OnIconImportStatus(new StatusEventArgs(e.Message, true, _currentProgress));
-        //}
+        catch (Exception e)
+        {
+            AuLogger.GetCurrentLogger<IconManager>("GenerateIconImageAsync").Error(e.Message);
+            OnIconImportStatus(new StatusEventArgs(e.Message, true, _currentProgress));
+        }
         finally
         {
             _cancellationTokenSource?.Dispose();
@@ -382,7 +397,17 @@ public class IconManager : IDisposable
         return null;
     }
 
-    private async Task<WolvenIcon> CreateIcon(string imagePath, string atlasName, string outputPath, bool overwrite, CancellationToken token)
+    /// <summary>
+    /// Create a WolvenIcon object from the specified image path and atlas name.
+    /// This method will create the necessary directories, copy the image to the project folder, generate the .inkatlas.json and .archive files,
+    /// and pack the project folder into a .archive file.
+    /// </summary>
+    /// <param name="imagePath">The path to the PNG file to create the icon of.</param>
+    /// <param name="atlasName">The name that the atlas should be created with. Must be all lowercase.</param>
+    /// <param name="overwrite">Indicates whether existing files should be overwritten.</param>
+    /// <param name="token">The token used for cancelling running operations.</param>
+    /// <returns>A task, that when complete, contains the resulting <see cref="WolvenIcon"/> object.</returns>
+    private async Task<WolvenIcon> CreateIcon(string imagePath, string atlasName, bool overwrite, CancellationToken token)
     {
         if (!IsInitialized)
         {
@@ -422,35 +447,27 @@ public class IconManager : IDisposable
         var projectImagePath = Path.Combine(projectDirectories["importedPngs"], imageFileName);
         File.Copy(imagePath, projectImagePath, overwrite);
 
-        //if (_inkAtlasExe.Equals(string.Empty) || _inkAtlasCli == null)
-        //{
-        //    OnIconImportStatus(new StatusEventArgs("The inkatlas executable could not be found.", true, _currentProgress));
-        //    CancelOperation();
-        //}
         _currentProgress += 2;
         token.ThrowIfCancellationRequested();
 
         // Use InkAtlasGenerator to generate the .inkatlas.json and images
-        await _inkAtlasGenerator.GenerateInkAtlasJsonAsync(projectDirectories["importedPngs"], projectDirectories["projectRawPath"], atlasName);
-
-        ////Generate .archive file
-        //await _inkAtlasCli.GenerateInkAtlasJsonAsync(projectDirectories["importedPngs"], projectDirectories["projectRawPath"], atlasName);
+        await _inkAtlasGenerator.GenerateInkAtlasJsonAsync(projectDirectories["importedPngs"], projectDirectories["rawFilesPath"], atlasName);
 
         _currentProgress += 2;
         token.ThrowIfCancellationRequested();
 
-        await _wolvenKitCli.ConvertToInkAtlasFile(projectDirectories["projectRawPath"]);
+        await _wolvenKitCli.ConvertToInkAtlasFile(projectDirectories["rawFilesPath"]);
 
         _currentProgress += 2;
         token.ThrowIfCancellationRequested();
 
-        await _wolvenKitCli.ImportToWolvenKitProject(projectDirectories["projectRawPath"]);
+        await _wolvenKitCli.ImportToWolvenKitProject(projectDirectories["rawFilesPath"]);
 
         _currentProgress += 2;
         token.ThrowIfCancellationRequested();
 
         //Copy files needed to the icon project folder
-        CopyProjectFiles(projectDirectories["projectRawPath"], projectDirectories["iconFiles"]);
+        CopyProjectFiles(projectDirectories["rawFilesPath"], projectDirectories["redEngineFilesPath"]);
 
         _currentProgress += 2;
         token.ThrowIfCancellationRequested();
@@ -462,49 +479,60 @@ public class IconManager : IDisposable
         var originalArchivePath = Path.Combine(projectDirectories["projectBasePath"], "archive.archive");
         var newArchivePath = Path.Combine(projectDirectories["projectBasePath"], $"{atlasName}.archive");
         File.Copy(originalArchivePath, newArchivePath, overwrite);
-        File.Delete(originalArchivePath);
 
         _currentProgress += 2;
         token.ThrowIfCancellationRequested();
 
         //Copy the archive to the staging icons folder
-        var finalOutputPath = Path.Combine(outputPath, $"{atlasName}.archive");
-        if (!Path.Exists(outputPath))
-            Directory.CreateDirectory(outputPath);
-        File.Copy(newArchivePath, finalOutputPath, overwrite);
+        if (!Path.Exists(newArchivePath))
+        {
+            OnIconImportStatus(new StatusEventArgs("The final .archive file could not be renamed.", true, _currentProgress));
+            CancelOperation();
+        }
+
+        File.Delete(originalArchivePath);
 
         //Finally, create the icon object and return it
-        var icon = new WolvenIcon(projectImagePath, finalOutputPath, atlasName);
-        icon.CustomIcon.InkAtlasPath = Path.Combine("base", "icon", $"{atlasName}.inkatlas");
-        icon.CustomIcon.InkAtlasPart = $"{atlasName}";
-        icon.AtlasName = atlasName;
+        var icon = new WolvenIcon(projectImagePath, newArchivePath, atlasName)
+        {
+            CustomIcon =
+            {
+                InkAtlasPath = Path.Combine("base", "icon", $"{atlasName}.inkatlas"),
+                InkAtlasPart = "icon_part"
+            },
+            AtlasName = atlasName
+        };
 
         return icon;
     }
 
     /// <summary>
-    /// Copy the required .inkatlas and .xbm files to the project's icon folder. This is the folder that will be packed into a .archive file.
+    /// Copy the required .inkatlas and .xbm files to the project's REDEngine folder and remove them from the raw files folder.
     /// </summary>
-    /// <param name="sourcePath">The path to the project's raw files.</param>
-    /// <param name="destinationPath">The project's icon folder.</param>
-    private void CopyProjectFiles(string sourcePath, string destinationPath)
+    /// <param name="rawFilesPath">The path to the project's raw files.</param>
+    /// <param name="redEngineFilesPath">The project's icon folder.</param>
+    private void CopyProjectFiles(string rawFilesPath, string redEngineFilesPath)
     {
         try
         {
-            if (!Directory.Exists(sourcePath))
-                throw new DirectoryNotFoundException("The source path does not exist.");
+            if (!Directory.Exists(rawFilesPath))
+                throw new DirectoryNotFoundException($"The path does not exist: {rawFilesPath}");
 
-            if (!Directory.Exists(destinationPath))
-                throw new DirectoryNotFoundException("The destination path does not exist.");
+            if (!Directory.Exists(redEngineFilesPath))
+                throw new DirectoryNotFoundException($"The path does not exist: {redEngineFilesPath}");
 
-            foreach (var file in Directory.GetFiles(sourcePath))
+            List<string> filesToDelete = [];
+            foreach (var file in Directory.GetFiles(rawFilesPath))
             {
                 var fileName = Path.GetFileName(file);
                 if (!fileName.EndsWith(".inkatlas") && !fileName.EndsWith(".xbm")) continue;
 
-                var destFile = Path.Combine(destinationPath, fileName);
+                var destFile = Path.Combine(redEngineFilesPath, fileName);
                 File.Copy(file, destFile, true);
+                filesToDelete.Add(file);
             }
+
+            filesToDelete.ForEach(File.Delete);
         }
         catch (Exception e)
         {

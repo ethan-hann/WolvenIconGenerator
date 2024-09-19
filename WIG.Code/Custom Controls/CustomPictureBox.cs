@@ -1,6 +1,5 @@
 ﻿using AetherUtils.Core.Logging;
 using WIG.Lib.Utility;
-using WolvenIconGenerator.Utility;
 
 namespace WolvenIconGenerator.Custom_Controls;
 
