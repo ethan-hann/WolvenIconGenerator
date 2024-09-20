@@ -17,7 +17,10 @@ namespace WIG.Lib.Utility
                 if (!IsPngFile(file))
                     throw new InvalidOperationException("The file is not a PNG file.");
 
-                return Image.FromFile(file);
+                using var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+                // Create a copy of the image from the stream to release the file lock immediately
+                return stream.Length == 0 ? null : Image.FromStream(stream);
             }
             catch (Exception e)
             {
