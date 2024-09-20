@@ -147,8 +147,8 @@ namespace WIG.Lib.Models
                     throw new ArgumentException("The image file must be a .png file.");
 
                 ImagePath = imagePath;
-                IconName = imagePath.Split('\\').Last();
-                IconImage = Image.FromFile(imagePath);
+                IconName = Path.GetFileNameWithoutExtension(imagePath);
+                IconImage = ImageUtils.LoadImage(imagePath);
             }
             catch (Exception e)
             {
@@ -193,7 +193,11 @@ namespace WIG.Lib.Models
                 if (IconImage is { Tag: string path } && path.Equals(ImagePath))
                     return true;
 
-                IconImage ??= Image.FromFile(ImagePath);
+                IconImage ??= ImageUtils.LoadImage(ImagePath);
+
+                if (IconImage == null)
+                    throw new InvalidOperationException("The image could not be loaded.");
+
                 IconImage.Tag = ImagePath;
 
                 return IconImage != null;
