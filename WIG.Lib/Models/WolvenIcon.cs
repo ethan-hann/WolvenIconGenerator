@@ -148,7 +148,7 @@ namespace WIG.Lib.Models
 
                 ImagePath = imagePath;
                 IconName = Path.GetFileNameWithoutExtension(imagePath);
-                IconImage = ImageUtils.LoadImage(imagePath);
+                IconImage = ImageUtils.LoadAndOptimizeImage(imagePath);
             }
             catch (Exception e)
             {
@@ -193,7 +193,7 @@ namespace WIG.Lib.Models
                 if (IconImage is { Tag: string path } && path.Equals(ImagePath))
                     return true;
 
-                IconImage ??= ImageUtils.LoadImage(ImagePath);
+                IconImage ??= ImageUtils.LoadAndOptimizeImage(ImagePath);
 
                 if (IconImage == null)
                     throw new InvalidOperationException("The image could not be loaded.");

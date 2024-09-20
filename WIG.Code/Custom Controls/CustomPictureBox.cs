@@ -36,7 +36,7 @@ public partial class CustomPictureBox : PictureBox
             if (!(files?.Length > 0)) return;
 
             var file = files[0];
-            var image = ImageUtils.LoadImage(file);
+            var image = ImageUtils.LoadAndOptimizeImage(file);
             if (image == null) return;
 
             Image = image;
