@@ -15,6 +15,7 @@ namespace WIG.Lib.Models
         private string? _atlasName = "custom_icon_atlas";
         private string? _imagePath = "\\path\\to\\custom\\image\\file";
         private string? _archivePath = "\\path\\to\\archive\\file";
+        private string? _originalArchivePath = "\\path\\to\\archive\\file";
         private string? _iconName = "custom_icon";
         private string? _sha256HashOfArchiveFile = string.Empty;
 
@@ -47,6 +48,20 @@ namespace WIG.Lib.Models
             {
                 _archivePath = value;
                 OnPropertyChanged(nameof(ArchivePath));
+            }
+        }
+
+        /// <summary>
+        /// The path to the original archive file before it was copied to the <see cref="ArchivePath"/>.
+        /// </summary>
+        [JsonProperty("originalArchivePath")]
+        public string? OriginalArchivePath
+        {
+            get => _originalArchivePath;
+            set
+            {
+                _originalArchivePath = value;
+                OnPropertyChanged(nameof(OriginalArchivePath));
             }
         }
 
@@ -139,7 +154,7 @@ namespace WIG.Lib.Models
             return new WolvenIcon(imagePath);
         }
 
-        private WolvenIcon(string imagePath)
+        internal WolvenIcon(string imagePath)
         {
             try
             {

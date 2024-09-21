@@ -493,14 +493,16 @@ public class IconManager : IDisposable
         File.Delete(originalArchivePath);
 
         //Finally, create the icon object and return it
-        var icon = new WolvenIcon(projectImagePath, newArchivePath, atlasName)
+        var icon = new WolvenIcon(projectImagePath)
         {
             CustomIcon =
             {
                 InkAtlasPath = Path.Combine("base", "icon", $"{atlasName}.inkatlas"),
                 InkAtlasPart = "icon_part"
             },
-            AtlasName = atlasName
+            AtlasName = atlasName,
+            OriginalArchivePath = newArchivePath,
+            Sha256HashOfArchiveFile = HashUtils.ComputeSha256Hash(newArchivePath, true)
         };
 
         return icon;
