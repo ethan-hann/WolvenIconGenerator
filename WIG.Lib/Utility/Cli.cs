@@ -52,6 +52,17 @@ internal class Cli(string executablePath)
     }
 
     /// <summary>
+    /// Convert a <c>.inkatlas</c> file to a <c>.inkatlas.json</c> file.
+    /// </summary>
+    /// <param name="inkAtlasPath">The full path to the <c>.inkatlas</c> file.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    public async Task ConvertToInkAtlasJsonFile(string inkAtlasPath)
+    {
+        var arguments = $"convert serialize \"{inkAtlasPath}\"";
+        await ExecuteCommandAsync(arguments);
+    }
+
+    /// <summary>
     /// Import a folder of raw files to a WolvenKit faux project.
     /// </summary>
     /// <param name="sourcePath">The full path to the raw input files.</param>

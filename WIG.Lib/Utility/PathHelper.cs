@@ -108,4 +108,35 @@ public class PathHelper
             }
         });
     }
+
+    /// <summary>
+    /// Returns the relative path from a base path to a full path.
+    /// </summary>
+    /// <param name="basePath"></param>
+    /// <param name="fullPath"></param>
+    /// <returns></returns>
+    public static string GetRelativePath(string basePath, string fullPath)
+    {
+        try
+        {
+            // Ensure the base path ends with a directory separator
+            if (!basePath.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+            {
+                basePath += System.IO.Path.DirectorySeparatorChar;
+            }
+
+            Uri baseUri = new Uri(basePath);
+            Uri fullUri = new Uri(fullPath);
+
+            // Get relative Uri
+            Uri relativeUri = baseUri.MakeRelativeUri(fullUri);
+
+            // Convert to string and replace forward slashes with backslashes
+            return Uri.UnescapeDataString(relativeUri.ToString()).Replace('/', '\\');
+        } catch (Exception ex)
+        {
+            AuLogger.GetCurrentLogger<PathHelper>("GetRelativePath").Error(ex, ex.Message);
+            return string.Empty;
+        }
+    }
 }
