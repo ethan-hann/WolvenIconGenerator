@@ -734,7 +734,7 @@ public class IconManager : IDisposable
         }
 
         //Get the PNG files from the exported folder
-        var PNGFiles = Directory.GetFiles(projectDirectories["exportedPngs"], "*.png");
+        var pngFiles = Directory.GetFiles(projectDirectories["exportedPngs"], "*.png");
 
         //Rename the .archive file to the atlas name
         var newArchivePath = Path.Combine(projectDirectories["projectBasePath"], $"{Path.GetFileNameWithoutExtension(archivePath)}.archive");
@@ -751,7 +751,7 @@ public class IconManager : IDisposable
         }
 
         //Make sure we have at least one PNG
-        if (PNGFiles.Length == 0)
+        if (pngFiles.Length == 0)
         {
             OnIconExportStatus(new StatusEventArgs("No PNG files were found in the exported folder.", true, _currentProgress));
             CancelOperation();
@@ -770,7 +770,7 @@ public class IconManager : IDisposable
         }
 
         //Finally, create the icon object from the first PNG file and return it
-        var icon = new WolvenIcon(PNGFiles.First(), newArchivePath)
+        var icon = new WolvenIcon(pngFiles.First(), newArchivePath)
         {
             CustomIcon =
             {
@@ -811,24 +811,13 @@ public class IconManager : IDisposable
                 throw new InvalidOperationException("The .inkatlas.json file could not be loaded.");
 
             var expectedPathInJson = PathHelper.GetRelativePath(projectBasePath, xbmFile);
-            var partName = string.Empty;
-            foreach (Element e in atlasData.Data.RootChunk.Slots.Elements)
-            {
-                foreach (var part in e.Parts)
-                {
-                    if (part.PartName.Value.Equals(string.Empty))
-                        continue;
-                    else
-                    {
-                        if (e.Texture.DepotPath.Value.Equals(expectedPathInJson))
-                        {
-                            //We found the correct entry for the texture; set it and break out of the loop.
-                            partName = part.PartName.Value;
-                            break;
-                        }
-                    }
-                }
-            }
+
+            //The part name is the first part which has a texture with the expected path
+            var partName = atlasData.Data.RootChunk.Slots.Elements.First(e => e.Texture.DepotPath.Value.Equals(expectedPathInJson)).Parts.First().PartName.Value;
+
+            //The path to the .inkatlas file should match the expected path of the .xbm file in the .inkatlas.json file but with the .inkatlas file name
+            inkAtlasPath = Path.Combine(expectedPathInJson[..expectedPathInJson.LastIndexOf('\\')],
+                Path.GetFileName(inkAtlasFile));
             return (inkAtlasPath, partName);
         }
         catch (Exception e)

@@ -154,6 +154,11 @@ namespace WIG.Lib.Models
             return new WolvenIcon(imagePath);
         }
 
+        public static WolvenIcon FromArchive(string archivePath)
+        {
+            return new WolvenIcon(string.Empty, archivePath);
+        }
+
         internal WolvenIcon(string imagePath)
         {
             try
