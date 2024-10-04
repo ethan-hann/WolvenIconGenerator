@@ -52,7 +52,7 @@ public partial class SplashScreen : Form
 
         //Setup Icon Manager
         UpdateStatus("Setting up Icon Manager...");
-        await IconManager.Instance.Initialize();
+        await IconManager.Instance.InitializeAsync();
         await Task.Delay(500); // Simulate delay
 
         statusMessages.Add(IconManager.Instance.IsInitialized

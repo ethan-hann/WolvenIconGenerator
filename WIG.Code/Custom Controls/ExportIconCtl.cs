@@ -8,6 +8,8 @@ namespace WolvenIconGenerator.Custom_Controls
 {
     public partial class ExportIconCtl : UserControl
     {
+        private CancellationTokenSource _cancellationTokenSource;
+
         public ExportIconCtl()
         {
             InitializeComponent();
@@ -36,10 +38,20 @@ namespace WolvenIconGenerator.Custom_Controls
                 SetProgressPercentage(0);
             });
 
-            _icon = IconManager.Instance.ExtractIconImageAsync(label1.Text, true).Result;
-           // var icon = IconManager.Instance.ExtractIconImageAsync(label1.Text, true).Result;
-            //if (icon == null)
-            //    AddStatusRow("Failed to import icon.");
+            // Create a new CancellationTokenSource for each operation
+            _cancellationTokenSource = new CancellationTokenSource();
+
+            // Assuming the max value is initially unknown or very high
+            int maxValue = 250;
+
+            var progress = new Progress<int>(value =>
+            {
+                // Scale progress to fit between 0 and 100
+                int scaledValue = (value * 100) / maxValue;
+                pgIconProgress.Invoke((() => pgIconProgress.Value = Math.Min(100, scaledValue)));
+            });
+
+            _icon = IconManager.Instance.ExtractIconImageAsync(label1.Text, progress, true, _cancellationTokenSource.Token).Result;
         }
 
         private void backgroundWorker1_ProgressChanged(object sender, System.ComponentModel.ProgressChangedEventArgs e)
@@ -98,7 +110,7 @@ namespace WolvenIconGenerator.Custom_Controls
             Invoke(() =>
             {
                 AddStatusRow(e.Message);
-                SetProgressPercentage(e.ProgressPercentage);
+                //SetProgressPercentage(e.ProgressPercentage);
             });
         }
     }

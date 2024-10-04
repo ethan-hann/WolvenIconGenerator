@@ -17,12 +17,15 @@ internal class InkAtlasGenerator
 
     /// <summary>
     /// Generate an .inkatlas.json file and combined image from a folder of images.
+    /// Supports progress reporting and cancellation.
     /// </summary>
     /// <param name="iconFolderPath">The path to the folder containing the .png files.</param>
     /// <param name="outputFolderPath">The output path where the final .inkatlas.json file should be saved.</param>
     /// <param name="atlasName">The name of the atlas to generate.</param>
+    /// <param name="token">A cancellation token to cancel the task.</param>
+    /// <param name="progress">An optional progress reporter to track progress.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    public async Task GenerateInkAtlasJsonAsync(string iconFolderPath, string outputFolderPath, string atlasName)
+    public async Task GenerateInkAtlasJsonAsync(string iconFolderPath, string outputFolderPath, string atlasName, CancellationToken token, IProgress<int>? progress = null)
     {
         iconFolderPath = iconFolderPath.Trim('"', '\'');
         outputFolderPath = outputFolderPath.Trim('"', '\'');
@@ -40,17 +43,19 @@ internal class InkAtlasGenerator
             return;
         }
 
-        await ProcessImagesAndGenerateInkAtlas(outputFolderPath, atlasName, pngFiles);
+        await ProcessImagesAndGenerateInkAtlas(outputFolderPath, atlasName, pngFiles, token, progress);
 
         OnOutputChanged($"InkAtlas generation complete for {atlasName}.");
     }
 
-    private async Task ProcessImagesAndGenerateInkAtlas(string outputFolderPath, string atlasName, string[] pngFiles)
+    private async Task ProcessImagesAndGenerateInkAtlas(string outputFolderPath, string atlasName, string[] pngFiles, CancellationToken token, IProgress<int>? progress)
     {
         var images = new List<ImageData>();
 
         foreach (var pngFile in pngFiles)
         {
+            token.ThrowIfCancellationRequested(); // Check if cancellation was requested
+
             try
             {
                 if (!File.Exists(pngFile))
@@ -85,12 +90,15 @@ internal class InkAtlasGenerator
                 OnErrorChanged($"Error opening image {pngFile}: {ex.Message}");
                 return;
             }
+
+            // Report progress after each image is processed
+            progress?.Report((images.Count * 100) / pngFiles.Length);
         }
 
-        await CombineImagesAndGenerateJson(images, outputFolderPath, atlasName);
+        await CombineImagesAndGenerateJson(images, outputFolderPath, atlasName, token, progress);
     }
 
-    private async Task CombineImagesAndGenerateJson(List<ImageData> images, string outputFolderPath, string atlasName)
+    private async Task CombineImagesAndGenerateJson(List<ImageData> images, string outputFolderPath, string atlasName, CancellationToken token, IProgress<int>? progress)
     {
         const int maxWidth = 2048;
         var grid = OrganizeImagesIntoGrid(images, maxWidth);
@@ -102,7 +110,7 @@ internal class InkAtlasGenerator
 
         var jsonData = CreateAtlasJson(grid, combinedImage, totalWidth, totalHeight, atlasName);
 
-        await SaveImagesAndJsonAsync(combinedImage, outputFolderPath, atlasName, jsonData);
+        await SaveImagesAndJsonAsync(combinedImage, outputFolderPath, atlasName, jsonData, token, progress);
     }
 
     private List<List<ImageData>> OrganizeImagesIntoGrid(List<ImageData> images, int maxWidth)
@@ -123,7 +131,7 @@ internal class InkAtlasGenerator
             else
             {
                 grid.Add(currentRow);
-                currentRow = [imageData];
+                currentRow = new List<ImageData> { imageData };
                 currentWidth = imageData.Image.Width + 1;
                 maxHeightInRow = imageData.Image.Height;
             }
@@ -159,13 +167,6 @@ internal class InkAtlasGenerator
         var currentY = 0;
         foreach (var row in grid)
         {
-            // Ensure the row is not null or empty
-            if (!row.Any())
-            {
-                OnErrorChanged("Error: Encountered an empty or null row in the grid.");
-                continue; // Skip this row to avoid further issues
-            }
-
             var maxHeightInRow = row.Max(img => img.Image.Height);
             var currentX = 0;
 
@@ -198,10 +199,8 @@ internal class InkAtlasGenerator
                     PartName = new PartName { Type = "CName", Storage = "string", Value = "icon_part" }
                 };
 
-                //Add 1 pixel spacing between images
                 currentX += imageData.Image.Width + 1;
 
-                // Safely add the part data to Elements[0]
                 if (jsonData.Data.RootChunk.Slots.Elements.Count == 1)
                 {
                     jsonData.Data.RootChunk.Slots.Elements[0].Parts.Add(partData);
@@ -212,13 +211,13 @@ internal class InkAtlasGenerator
                 }
             }
 
-            currentY += maxHeightInRow + 1; //Add 1 pixel spacing between rows
+            currentY += maxHeightInRow + 1;
         }
 
         return jsonData;
     }
 
-    private async Task SaveImagesAndJsonAsync(Image<Rgba32> combinedImage, string outputFolderPath, string atlasName, InkAtlasData jsonData)
+    private async Task SaveImagesAndJsonAsync(Image<Rgba32> combinedImage, string outputFolderPath, string atlasName, InkAtlasData jsonData, CancellationToken token, IProgress<int>? progress)
     {
         if (!Directory.Exists(outputFolderPath))
         {
@@ -226,7 +225,7 @@ internal class InkAtlasGenerator
         }
 
         var combinedImagePath = Path.Combine(outputFolderPath, $"{atlasName}.png");
-        await combinedImage.SaveAsPngAsync(combinedImagePath);
+        await combinedImage.SaveAsPngAsync(combinedImagePath, token);
         OnOutputChanged($"Combined image saved to {combinedImagePath}");
 
         // Use custom JSON class to save the JSON data
@@ -236,6 +235,9 @@ internal class InkAtlasGenerator
             OnOutputChanged($"The .inkatlas data was saved to {jsonOutputPath}");
         else
             OnErrorChanged("Error saving .inkatlas data.");
+
+        // Report final progress as 100%
+        progress?.Report(100);
     }
 
     private void OnOutputChanged(string? output)
