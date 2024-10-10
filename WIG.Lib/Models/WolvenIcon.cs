@@ -18,10 +18,24 @@ namespace WIG.Lib.Models
         private string? _originalArchivePath = "\\path\\to\\archive\\file";
         private string? _iconName = "custom_icon";
         private string? _sha256HashOfArchiveFile = string.Empty;
+        private bool? _isFromArchive = false;
+        private Guid? _iconId;
 
         private RadioExtCustomIcon _customIcon = new();
 
         private bool _isActive;
+
+        [JsonProperty("iconId")]
+        public Guid? IconId
+        {
+            get => _iconId;
+            set
+            {
+                _iconId = value;
+                OnPropertyChanged(nameof(IconId));
+            
+            }
+        }
 
         /// <summary>
         /// The path to the icon.
@@ -132,6 +146,17 @@ namespace WIG.Lib.Models
             {
                 _customIcon = value;
                 OnPropertyChanged(nameof(CustomIcon));
+            }
+        }
+
+        [JsonProperty("fromArchive")]
+        public bool IsFromArchive
+        {
+            get => _isFromArchive ?? false;
+            set
+            {
+                _isFromArchive = value;
+                OnPropertyChanged(nameof(IsFromArchive));
             }
         }
 

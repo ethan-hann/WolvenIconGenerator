@@ -6,8 +6,8 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AssemblyVersion>1.0.62.0</AssemblyVersion>
-    <FileVersion>1.0.62.0</FileVersion>
+    <AssemblyVersion>1.0.70.0</AssemblyVersion>
+    <FileVersion>1.0.70.0</FileVersion>
     <StartupObject>WolvenIconGenerator.Program</StartupObject>
     <ApplicationIcon>Resources\wolvenIconGeneratorLogo.ico</ApplicationIcon>
   </PropertyGroup>

@@ -202,8 +202,8 @@ namespace WIG.Lib.Utility
                 WorkingDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                     "Wolven Icon Generator", "tools");
                 WolvenKitTempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-                ImageImportDirectory = Path.Combine(WorkingDirectory, "imported");
-                ImageExportDirectory = Path.Combine(WorkingDirectory, "exported");
+                ImageImportDirectory = Path.Combine(WorkingDirectory, "imported_pngs");
+                ImageExportDirectory = Path.Combine(WorkingDirectory, "extracted_pngs");
 
                 Directory.CreateDirectory(WorkingDirectory);
                 Directory.CreateDirectory(WolvenKitTempDirectory);
@@ -235,16 +235,17 @@ namespace WIG.Lib.Utility
                     throw new InvalidOperationException("The image import directory is null.");
 
                 var outputDictionary = new Dictionary<string, string>();
+                var guid = Guid.NewGuid();
 
                 // Create the path that imported PNGs are stored
-                var importedPngsPath = Path.Combine(ImageImportDirectory, $"{atlasName}-{Guid.NewGuid()}");
+                var importedPngsPath = Path.Combine(ImageImportDirectory, $"{atlasName}-{guid}");
                 if (overwrite && Directory.Exists(importedPngsPath))
                     Directory.Delete(importedPngsPath, true);
                 Directory.CreateDirectory(importedPngsPath);
                 outputDictionary["importedPngs"] = importedPngsPath;
 
                 // Create the base path for the project
-                var projectBasePath = Path.Combine(WorkingDirectory, atlasName);
+                var projectBasePath = Path.Combine(WorkingDirectory, "imported_working_directory", $"{atlasName}-{guid}");
                 if (overwrite && Directory.Exists(projectBasePath))
                     Directory.Delete(projectBasePath, true);
                 Directory.CreateDirectory(projectBasePath);
@@ -278,6 +279,8 @@ namespace WIG.Lib.Utility
                 Directory.CreateDirectory(rawFilesPath);
                 outputDictionary["rawFilesPath"] = rawFilesPath;
 
+                outputDictionary["iconGuid"] = guid.ToString();
+
                 return outputDictionary;
             }
             catch (Exception e)
@@ -307,18 +310,21 @@ namespace WIG.Lib.Utility
                 var outputDictionary = new Dictionary<string, string>();
 
                 // Create the path that exported PNGs are stored
-                var exportedPngsPath = Path.Combine(ImageExportDirectory, $"{atlasName}-{Guid.NewGuid()}");
+                var guid = Guid.NewGuid();
+                var exportedPngsPath = Path.Combine(ImageExportDirectory, $"{atlasName}-{guid}");
                 if (overwrite && Directory.Exists(exportedPngsPath))
                     Directory.Delete(exportedPngsPath, true);
                 Directory.CreateDirectory(exportedPngsPath);
                 outputDictionary["exportedPngs"] = exportedPngsPath;
 
                 // Create the base path for the project
-                var projectBasePath = Path.Combine(WorkingDirectory, atlasName);
+                var projectBasePath = Path.Combine(WorkingDirectory, "extracted_working_directory", $"{atlasName}-{guid}");
                 if (overwrite && Directory.Exists(projectBasePath))
                     Directory.Delete(projectBasePath, true);
                 Directory.CreateDirectory(projectBasePath);
                 outputDictionary["projectBasePath"] = projectBasePath;
+
+                outputDictionary["iconGuid"] = guid.ToString();
 
                 return outputDictionary;
             }
@@ -601,7 +607,8 @@ namespace WIG.Lib.Utility
                     },
                     AtlasName = atlasName,
                     OriginalArchivePath = newArchivePath,
-                    Sha256HashOfArchiveFile = HashUtils.ComputeSha256Hash(newArchivePath, true)
+                    Sha256HashOfArchiveFile = HashUtils.ComputeSha256Hash(newArchivePath, true),
+                    IconId = Guid.Parse(projectDirectories["iconGuid"])
                 };
 
                 _currentProgress = 100;
@@ -788,7 +795,7 @@ namespace WIG.Lib.Utility
 
                 // Rename the .archive file to the atlas name
                 var newArchivePath = Path.Combine(projectDirectories["projectBasePath"], $"{atlasName}.archive");
-                File.Move(archivePath, newArchivePath, overwrite);
+                File.Copy(archivePath, newArchivePath, overwrite);
 
                 _currentProgress += 10;
                 progress?.Report(_currentProgress);
@@ -834,6 +841,8 @@ namespace WIG.Lib.Utility
                     },
                     AtlasName = atlasName,
                     OriginalArchivePath = archivePath,
+                    IsFromArchive = true,
+                    IconId = Guid.Parse(projectDirectories["iconGuid"])
                 };
 
                 _currentProgress = 100;
