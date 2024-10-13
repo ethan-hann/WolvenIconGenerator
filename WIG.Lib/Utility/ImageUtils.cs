@@ -9,17 +9,16 @@ namespace WIG.Lib.Utility
         /// Load and optimize an image from the specified file.
         /// </summary>
         /// <param name="file">The file to load as an image.</param>
-        /// <param name="maxWidth">Optional max width to downsample the image, 0 to disable.</param>
-        /// <param name="maxHeight">Optional max height to downsample the image, 0 to disable.</param>
+        /// <param name="maxWidth">Optional max width to down sample the image, 0 to disable.</param>
+        /// <param name="maxHeight">Optional max height to down sample the image, 0 to disable.</param>
         /// <returns>The optimized <see cref="Image"/> or <c>null</c> if the image couldn't be loaded.</returns>
-        /// <exception cref="InvalidOperationException">Occurs if the image to load was not a PNG file.</exception>
         public static Image? LoadAndOptimizeImage(string file, int maxWidth = 0, int maxHeight = 0)
         {
             try
             {
                 // Ensure it's a PNG file
                 if (!IsPngFile(file))
-                    throw new InvalidOperationException("The file is not a PNG file.");
+                    return null;
 
                 using var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
 
@@ -27,7 +26,7 @@ namespace WIG.Lib.Utility
                 var originalImage = stream.Length == 0 ? null : Image.FromStream(stream);
                 if (originalImage == null) return null;
 
-                // Optional downsampling to fit within max dimensions
+                // Optional down sampling to fit within max dimensions
                 if (maxWidth > 0 && maxHeight > 0)
                 {
                     originalImage = DownsampleImage(originalImage, maxWidth, maxHeight);

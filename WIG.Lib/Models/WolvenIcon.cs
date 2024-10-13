@@ -192,6 +192,8 @@ namespace WIG.Lib.Models
                     throw new ArgumentException("The image file must be a .png file.");
 
                 ImagePath = imagePath;
+                if (!Path.Exists(imagePath)) return;
+
                 IconName = Path.GetFileNameWithoutExtension(imagePath);
                 IconImage = ImageUtils.LoadAndOptimizeImage(imagePath);
             }
@@ -206,9 +208,8 @@ namespace WIG.Lib.Models
         /// </summary>
         /// <param name="imagePath">The path to the <c>.png</c> file for this icon.</param>
         /// <param name="archivePath">The path to the <c>.archive</c> file for this icon.</param>
-        public WolvenIcon(string imagePath, string archivePath)
+        public WolvenIcon(string imagePath, string archivePath) : this(imagePath)
         {
-            ImagePath = imagePath;
             ArchivePath = archivePath;
             Sha256HashOfArchiveFile = HashUtils.ComputeSha256Hash(archivePath, true);
         }
@@ -240,10 +241,11 @@ namespace WIG.Lib.Models
 
                 IconImage ??= ImageUtils.LoadAndOptimizeImage(ImagePath);
 
-                if (IconImage == null)
-                    throw new InvalidOperationException("The image could not be loaded.");
+                //if (IconImage == null)
+                //    throw new InvalidOperationException("The image could not be loaded.");
 
-                IconImage.Tag = ImagePath;
+                if (IconImage != null)
+                    IconImage.Tag = ImagePath;
 
                 return IconImage != null;
             }
@@ -287,6 +289,12 @@ namespace WIG.Lib.Models
                 ImagePath = _imagePath,
                 IconName = _iconName,
                 ArchivePath = _archivePath,
+                AtlasName = _atlasName,
+                CustomIcon = _customIcon,
+                IsActive = _isActive,
+                IsFromArchive = _isFromArchive ?? false,
+                IconId = _iconId,
+                OriginalArchivePath = _originalArchivePath,
                 Sha256HashOfArchiveFile = _sha256HashOfArchiveFile
             };
         }

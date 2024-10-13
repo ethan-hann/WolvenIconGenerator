@@ -441,8 +441,8 @@ namespace WIG.Lib.Utility
 
             try
             {
-                AuLogger.GetCurrentLogger<IconManager>("GenerateIconImageAsync").Info("The icon import operation has started.");
-                OnIconImportStarted(new StatusEventArgs("The icon import operation has started.", false, _currentProgress));
+                AuLogger.GetCurrentLogger<IconManager>("GenerateIconImageAsync").Info($"The icon import operation has started: {atlasName}");
+                OnIconImportStarted(new StatusEventArgs($"The icon import operation has started: {atlasName}", false, _currentProgress));
 
                 WolvenIcon? icon = null;
 
@@ -454,15 +454,15 @@ namespace WIG.Lib.Utility
                         throw new InvalidOperationException("The icon could not be created.");
                 }, token);
 
-                AuLogger.GetCurrentLogger<IconManager>("GenerateIconImageAsync").Info("The icon import operation has completed successfully.");
-                OnIconImportFinished(new StatusEventArgs("The icon import operation has completed successfully.", false, _currentProgress));
+                AuLogger.GetCurrentLogger<IconManager>("GenerateIconImageAsync").Info($"The icon import operation has completed successfully: {icon?.AtlasName}");
+                OnIconImportFinished(new StatusEventArgs($"The icon import operation has completed successfully: {icon?.AtlasName}", false, _currentProgress));
 
                 return icon;
             }
             catch (OperationCanceledException)
             {
-                AuLogger.GetCurrentLogger<IconManager>("GenerateIconImageAsync").Info("The icon import operation was cancelled.");
-                OnIconImportStatus(new StatusEventArgs("The icon import operation was cancelled.", false, _currentProgress));
+                AuLogger.GetCurrentLogger<IconManager>("GenerateIconImageAsync").Info($"The icon import operation was cancelled: {atlasName}");
+                OnIconImportStatus(new StatusEventArgs($"The icon import operation was cancelled: {atlasName}", false, _currentProgress));
             }
             catch (Exception e)
             {
@@ -681,8 +681,8 @@ namespace WIG.Lib.Utility
 
             try
             {
-                AuLogger.GetCurrentLogger<IconManager>("ExtractIconImageAsync").Info("The icon export operation has started.");
-                OnIconExportStarted(new StatusEventArgs("The icon export operation has started.", false, _currentProgress));
+                AuLogger.GetCurrentLogger<IconManager>("ExtractIconImageAsync").Info($"The icon export operation has started: {archivePath}");
+                OnIconExportStarted(new StatusEventArgs($"The icon export operation has started: {archivePath}", false, _currentProgress));
 
                 WolvenIcon? icon = null;
 
@@ -693,15 +693,15 @@ namespace WIG.Lib.Utility
                         throw new InvalidOperationException("The icon could not be extracted.");
                 }, token);
 
-                AuLogger.GetCurrentLogger<IconManager>("ExtractIconImageAsync").Info("The icon export operation has completed successfully.");
-                OnIconExportFinished(new StatusEventArgs("The icon export operation has completed successfully.", false, _currentProgress));
+                AuLogger.GetCurrentLogger<IconManager>("ExtractIconImageAsync").Info($"The icon export operation has completed successfully: {icon?.AtlasName}");
+                OnIconExportFinished(new StatusEventArgs($"The icon export operation has completed successfully: {icon?.AtlasName}", false, _currentProgress));
 
                 return icon;
             }
             catch (OperationCanceledException)
             {
-                AuLogger.GetCurrentLogger<IconManager>("ExtractIconImageAsync").Info("The icon export operation was cancelled.");
-                OnIconExportStatus(new StatusEventArgs("The icon export operation was cancelled.", false, _currentProgress));
+                AuLogger.GetCurrentLogger<IconManager>("ExtractIconImageAsync").Info($"The icon export operation was cancelled: {archivePath}");
+                OnIconExportStatus(new StatusEventArgs($"The icon export operation was cancelled: {archivePath}", false, _currentProgress));
             }
             catch (Exception e)
             {
