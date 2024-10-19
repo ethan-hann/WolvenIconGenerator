@@ -93,6 +93,9 @@ public class IconManager : IDisposable
     /// </summary>
     public event EventHandler<StatusEventArgs>? CliStatus;
 
+    /// <summary>
+    /// Releases resources used by the IconManager.
+    /// </summary>
     ~IconManager()
     {
         CleanupResources();
@@ -237,14 +240,28 @@ public class IconManager : IDisposable
 
     #region Import Events
 
+    /// <summary>
+    /// Occurs whenever the icon import has started.
+    /// </summary>
     public event EventHandler<StatusEventArgs>? IconImportStarted;
+    
+    /// <summary>
+    /// Occurs whenever the icon import has finished.
+    /// </summary>
     public event EventHandler<StatusEventArgs>? IconImportFinished;
 
     #endregion
 
     #region Export Events
 
+    /// <summary>
+    /// Occurs whenever the icon extraction has started.
+    /// </summary>
     public event EventHandler<StatusEventArgs>? IconExportStarted;
+    
+    /// <summary>
+    /// Occurs whenever the icon extraction has finished.
+    /// </summary>
     public event EventHandler<StatusEventArgs>? IconExportFinished;
 
     #endregion

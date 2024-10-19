@@ -24,6 +24,9 @@ using Image = SixLabors.ImageSharp.Image;
 
 namespace WIG.Lib.Utility;
 
+/// <summary>
+/// Contains utility methods for manipulating paths.
+/// </summary>
 public class PathHelper
 {
     /// <summary>

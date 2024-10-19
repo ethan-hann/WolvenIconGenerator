@@ -89,6 +89,9 @@ public class WolvenIcon : INotifyPropertyChanged, ICloneable, IEquatable<WolvenI
         IconName = iconName;
     }
 
+    /// <summary>
+    /// The unique id for this icon.
+    /// </summary>
     [JsonProperty("iconId")]
     public Guid? IconId
     {
@@ -212,6 +215,9 @@ public class WolvenIcon : INotifyPropertyChanged, ICloneable, IEquatable<WolvenI
         }
     }
 
+    /// <summary>
+    /// Indicates if the icon was created from an <c>.archive</c> file or not.
+    /// </summary>
     [JsonProperty("fromArchive")]
     public bool IsFromArchive
     {
@@ -228,6 +234,10 @@ public class WolvenIcon : INotifyPropertyChanged, ICloneable, IEquatable<WolvenI
     /// </summary>
     public Image? IconImage { get; private set; }
 
+    /// <summary>
+    /// <inheritdoc cref="ICloneable.Clone"/>
+    /// </summary>
+    /// <returns></returns>
     public object Clone()
     {
         return new WolvenIcon
@@ -245,6 +255,11 @@ public class WolvenIcon : INotifyPropertyChanged, ICloneable, IEquatable<WolvenI
         };
     }
 
+    /// <summary>
+    /// <inheritdoc cref="IEquatable{T}.Equals(T?)"/>
+    /// </summary>
+    /// <param name="other">The <see cref="WolvenIcon"/> to compare with.</param>
+    /// <returns></returns>
     public bool Equals(WolvenIcon? other)
     {
         if (other == null) return false;
@@ -253,17 +268,26 @@ public class WolvenIcon : INotifyPropertyChanged, ICloneable, IEquatable<WolvenI
                Sha256HashOfArchiveFile == other.Sha256HashOfArchiveFile;
     }
 
+    /// <summary>
+    /// Occurs whenever a property is changed.
+    /// </summary>
     public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>
     /// Create a new Icon object from a path to a <c>.png</c> image file.
     /// </summary>
     /// <param name="imagePath">The path to the image on disk.</param>
+    /// <returns>A new <see cref="WolvenIcon"/> instance.</returns>
     public static WolvenIcon FromPath(string imagePath)
     {
         return new WolvenIcon(imagePath);
     }
 
+    /// <summary>
+    /// Create a new Icon object from an <c>.archive</c> file.
+    /// </summary>
+    /// <param name="archivePath">The path to the archive file to create the icon from.</param>
+    /// <returns>A new <see cref="WolvenIcon"/> instance.</returns>
     public static WolvenIcon FromArchive(string archivePath)
     {
         return new WolvenIcon(string.Empty, archivePath);
@@ -327,11 +351,20 @@ public class WolvenIcon : INotifyPropertyChanged, ICloneable, IEquatable<WolvenI
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
+    /// <summary>
+    /// <inheritdoc cref="object.Equals(object?)"/>
+    /// </summary>
+    /// <param name="obj"></param>
+    /// <returns></returns>
     public override bool Equals(object? obj)
     {
         return Equals(obj as WolvenIcon);
     }
 
+    /// <summary>
+    /// <inheritdoc cref="object.GetHashCode"/>
+    /// </summary>
+    /// <returns></returns>
     public override int GetHashCode()
     {
         return HashCode.Combine(Sha256HashOfArchiveFile, ImagePath, ArchivePath);

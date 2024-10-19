@@ -11,23 +11,30 @@
     <PackageId>WIG.Lib</PackageId>
     <Title>Wolven Icon Generator</Title>
     <Authors>Ethan Hann</Authors>
-    <Description>The Wolven Icon Generator is a specialized library for generating and managing custom icons for the CyberRadio-Assistant (CRA) project. This library provides tools for converting PNG images into .archive files and handling icon metadata for Cyberpunk 2077 modding projects. It simplifies icon creation, extraction, and packaging workflows, designed for developers working with WolvenKit and other modding tools.
-
-Key Features:
-
-Generate .archive files from PNG images for custom icons.
-Efficient icon extraction and management.
-Custom InkAtlas generation for use with mods.
-Asynchronous operations support for long-running tasks with progress reporting.</Description>
+    <Description>A specialized library for generating and managing custom icons for Cyberpunk 2077 modding projects.</Description>
     <Copyright>2024 Ethan Hann</Copyright>
     <PackageProjectUrl>https://github.com/ethan-hann/WolvenIconGenerator</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/ethan-hann/WolvenIconGenerator/blob/main/LICENSE</PackageLicenseUrl>
-    <PackageIcon>Resources\wolvenIconGeneratorLogo.png</PackageIcon>
     <RepositoryUrl>https://github.com/ethan-hann/WolvenIconGenerator</RepositoryUrl>
     <PackageTags>Cyberpunk, modding, WolvenKit, icons, archive, generator</PackageTags>
     <PackageReleaseNotes>Initial release with support for basic icon generation and integration with CyberRadio-Assistant.
 Includes asynchronous tasks for improved performance during long-running operations.</PackageReleaseNotes>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <RepositoryType>Git</RepositoryType>
+    <Version>1.0.44</Version>
+    <PackageIcon>logo.png</PackageIcon>
+    <NeutralLanguage>en</NeutralLanguage>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <PlatformTarget>x64</PlatformTarget>
+    <DocumentationFile>bin\Debug\WIG.Lib.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <PlatformTarget>x64</PlatformTarget>
+    <DocumentationFile>bin\Release\WIG.Lib.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -37,9 +44,18 @@ Includes asynchronous tasks for improved performance during long-running operati
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Resources\wolvenIconGeneratorLogo.ico">
+    <Resource Include="logo.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <Pack>True</Pack>
-      <PackagePath></PackagePath>
+      <PackagePath>\</PackagePath>
+    </Resource>
+    <None Include="bin\Release\WIG.Lib.xml" Pack="true">
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </None>
+    <None Include="README.md">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
 

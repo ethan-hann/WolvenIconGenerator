@@ -18,6 +18,9 @@ using System.Reflection;
 
 namespace WIG.Lib.Utility;
 
+/// <summary>
+/// Extension methods for <see cref="Assembly"/> types.
+/// </summary>
 public static class AssemblyExtensions
 {
     /// <summary>

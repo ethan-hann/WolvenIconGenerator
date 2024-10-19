@@ -18,7 +18,10 @@ using System.Security.Cryptography;
 
 namespace WIG.Lib.Utility;
 
-public sealed class HashUtils
+/// <summary>
+/// Contains utility methods for hashing.
+/// </summary>
+public static class HashUtils
 {
     /// <summary>
     /// Calculates the SHA-256 hash of the file at the specified path.

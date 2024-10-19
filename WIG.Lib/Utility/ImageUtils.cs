@@ -20,6 +20,9 @@ using AetherUtils.Core.Logging;
 
 namespace WIG.Lib.Utility;
 
+/// <summary>
+/// Contains utility methods for image handling.
+/// </summary>
 public sealed class ImageUtils
 {
     /// <summary>

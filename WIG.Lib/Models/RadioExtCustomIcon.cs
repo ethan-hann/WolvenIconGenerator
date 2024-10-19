@@ -19,6 +19,9 @@ using Newtonsoft.Json;
 
 namespace WIG.Lib.Models;
 
+/// <summary>
+/// Represents a custom icon definition for the RadioExt mod.
+/// </summary>
 public class RadioExtCustomIcon : INotifyPropertyChanged, ICloneable, IEquatable<RadioExtCustomIcon>
 {
     private string _inkAtlasPart = "custom_texture_part";
@@ -52,6 +55,10 @@ public class RadioExtCustomIcon : INotifyPropertyChanged, ICloneable, IEquatable
         }
     }
 
+    /// <summary>
+    /// <inheritdoc cref="ICloneable.Clone"/>
+    /// </summary>
+    /// <returns></returns>
     public object Clone()
     {
         return new RadioExtCustomIcon
@@ -61,6 +68,11 @@ public class RadioExtCustomIcon : INotifyPropertyChanged, ICloneable, IEquatable
         };
     }
 
+    /// <summary>
+    /// <inheritdoc cref="IEquatable{T}.Equals(T?)"/>
+    /// </summary>
+    /// <param name="other">The <see cref="RadioExtCustomIcon"/> to compare with.</param>
+    /// <returns></returns>
     public bool Equals(RadioExtCustomIcon? other)
     {
         if (other == null) return false;
@@ -68,6 +80,9 @@ public class RadioExtCustomIcon : INotifyPropertyChanged, ICloneable, IEquatable
                InkAtlasPart == other.InkAtlasPart;
     }
 
+    /// <summary>
+    /// Occurs whenever a property is changed.
+    /// </summary>
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private void OnPropertyChanged(string propertyName)
@@ -75,11 +90,20 @@ public class RadioExtCustomIcon : INotifyPropertyChanged, ICloneable, IEquatable
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
+    /// <summary>
+    /// <inheritdoc cref="Equals(WIG.Lib.Models.RadioExtCustomIcon?)"/>
+    /// </summary>
+    /// <param name="obj">The <see cref="RadioExtCustomIcon"/> to compare with.</param>
+    /// <returns></returns>
     public override bool Equals(object? obj)
     {
         return Equals(obj as RadioExtCustomIcon);
     }
 
+    /// <summary>
+    /// <inheritdoc cref="object.GetHashCode"/>
+    /// </summary>
+    /// <returns></returns>
     public override int GetHashCode()
     {
         return HashCode.Combine(InkAtlasPath, InkAtlasPart);
