@@ -1,4 +1,20 @@
-﻿using AetherUtils.Core.Files;
+﻿// InkAtlasGenerator.cs : WIG.Lib
+// Copyright (C) 2024  Ethan Hann
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+using AetherUtils.Core.Files;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -10,10 +26,9 @@ namespace WIG.Lib.Tools.InkAtlas;
 
 internal class InkAtlasGenerator
 {
+    private readonly Json<InkAtlasData> _jsonData = new();
     public event EventHandler<string?>? OutputChanged;
     public event EventHandler<string?>? ErrorChanged;
-
-    private readonly Json<InkAtlasData> _jsonData = new();
 
     /// <summary>
     /// Generate an .inkatlas.json file and combined image from a folder of images.
@@ -25,7 +40,8 @@ internal class InkAtlasGenerator
     /// <param name="token">A cancellation token to cancel the task.</param>
     /// <param name="progress">An optional progress reporter to track progress.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    public async Task GenerateInkAtlasJsonAsync(string iconFolderPath, string outputFolderPath, string atlasName, CancellationToken token, IProgress<int>? progress = null)
+    public async Task GenerateInkAtlasJsonAsync(string iconFolderPath, string outputFolderPath, string atlasName,
+        CancellationToken token, IProgress<int>? progress = null)
     {
         iconFolderPath = iconFolderPath.Trim('"', '\'');
         outputFolderPath = outputFolderPath.Trim('"', '\'');
@@ -48,7 +64,8 @@ internal class InkAtlasGenerator
         OnOutputChanged($"InkAtlas generation complete for {atlasName}.");
     }
 
-    private async Task ProcessImagesAndGenerateInkAtlas(string outputFolderPath, string atlasName, string[] pngFiles, CancellationToken token, IProgress<int>? progress)
+    private async Task ProcessImagesAndGenerateInkAtlas(string outputFolderPath, string atlasName, string[] pngFiles,
+        CancellationToken token, IProgress<int>? progress)
     {
         var images = new List<ImageData>();
 
@@ -92,13 +109,14 @@ internal class InkAtlasGenerator
             }
 
             // Report progress after each image is processed
-            progress?.Report((images.Count * 100) / pngFiles.Length);
+            progress?.Report(images.Count * 100 / pngFiles.Length);
         }
 
         await CombineImagesAndGenerateJson(images, outputFolderPath, atlasName, token, progress);
     }
 
-    private async Task CombineImagesAndGenerateJson(List<ImageData> images, string outputFolderPath, string atlasName, CancellationToken token, IProgress<int>? progress)
+    private async Task CombineImagesAndGenerateJson(List<ImageData> images, string outputFolderPath, string atlasName,
+        CancellationToken token, IProgress<int>? progress)
     {
         const int maxWidth = 2048;
         var grid = OrganizeImagesIntoGrid(images, maxWidth);
@@ -106,7 +124,7 @@ internal class InkAtlasGenerator
         var totalHeight = CalculateTotalHeight(grid);
 
         using var combinedImage = new Image<Rgba32>(totalWidth, totalHeight);
-        combinedImage.Mutate(ctx => ctx.BackgroundColor(Color.Transparent));  // Set background to transparent
+        combinedImage.Mutate(ctx => ctx.BackgroundColor(Color.Transparent)); // Set background to transparent
 
         var jsonData = CreateAtlasJson(grid, combinedImage, totalWidth, totalHeight, atlasName);
 
@@ -121,7 +139,6 @@ internal class InkAtlasGenerator
         var maxHeightInRow = 0;
 
         foreach (var imageData in images)
-        {
             if (currentWidth + imageData.Image.Width <= maxWidth)
             {
                 currentRow.Add(imageData);
@@ -135,7 +152,6 @@ internal class InkAtlasGenerator
                 currentWidth = imageData.Image.Width + 1;
                 maxHeightInRow = imageData.Image.Height;
             }
-        }
 
         if (currentRow.Any()) grid.Add(currentRow);
 
@@ -153,7 +169,8 @@ internal class InkAtlasGenerator
         return grid.Sum(row => row.Max(img => img.Image.Height)) + (grid.Count - 1);
     }
 
-    private InkAtlasData CreateAtlasJson(List<List<ImageData>> grid, Image<Rgba32> combinedImage, int totalWidth, int totalHeight, string atlasName)
+    private InkAtlasData CreateAtlasJson(List<List<ImageData>> grid, Image<Rgba32> combinedImage, int totalWidth,
+        int totalHeight, string atlasName)
     {
         var jsonData = new InkAtlasData
         {
@@ -202,13 +219,9 @@ internal class InkAtlasGenerator
                 currentX += imageData.Image.Width + 1;
 
                 if (jsonData.Data.RootChunk.Slots.Elements.Count == 1)
-                {
                     jsonData.Data.RootChunk.Slots.Elements[0].Parts.Add(partData);
-                }
                 else
-                {
                     OnErrorChanged("Error: No slots available in JSON structure to add part data.");
-                }
             }
 
             currentY += maxHeightInRow + 1;
@@ -217,12 +230,10 @@ internal class InkAtlasGenerator
         return jsonData;
     }
 
-    private async Task SaveImagesAndJsonAsync(Image<Rgba32> combinedImage, string outputFolderPath, string atlasName, InkAtlasData jsonData, CancellationToken token, IProgress<int>? progress)
+    private async Task SaveImagesAndJsonAsync(Image<Rgba32> combinedImage, string outputFolderPath, string atlasName,
+        InkAtlasData jsonData, CancellationToken token, IProgress<int>? progress)
     {
-        if (!Directory.Exists(outputFolderPath))
-        {
-            Directory.CreateDirectory(outputFolderPath);
-        }
+        if (!Directory.Exists(outputFolderPath)) Directory.CreateDirectory(outputFolderPath);
 
         var combinedImagePath = Path.Combine(outputFolderPath, $"{atlasName}.png");
         await combinedImage.SaveAsPngAsync(combinedImagePath, token);
@@ -242,17 +253,11 @@ internal class InkAtlasGenerator
 
     private void OnOutputChanged(string? output)
     {
-        if (!string.IsNullOrEmpty(output))
-        {
-            OutputChanged?.Invoke(this, output);
-        }
+        if (!string.IsNullOrEmpty(output)) OutputChanged?.Invoke(this, output);
     }
 
     private void OnErrorChanged(string? error)
     {
-        if (!string.IsNullOrEmpty(error))
-        {
-            ErrorChanged?.Invoke(this, error);
-        }
+        if (!string.IsNullOrEmpty(error)) ErrorChanged?.Invoke(this, error);
     }
 }

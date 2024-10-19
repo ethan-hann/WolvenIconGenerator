@@ -1,5 +1,21 @@
-﻿using AetherUtils.Core.Logging;
+﻿// Cli.cs : WIG.Lib
+// Copyright (C) 2024  Ethan Hann
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 using System.Diagnostics;
+using AetherUtils.Core.Logging;
 
 namespace WIG.Lib.Utility;
 
@@ -9,10 +25,7 @@ namespace WIG.Lib.Utility;
 internal class Cli
 {
     private readonly string _executablePath;
-    private CancellationToken _cancellationToken;
-
-    public event EventHandler<string?>? OutputChanged;
-    public event EventHandler<string?>? ErrorChanged;
+    private readonly CancellationToken _cancellationToken;
 
     public Cli(string executablePath, CancellationToken cancellationToken)
     {
@@ -20,7 +33,11 @@ internal class Cli
         _cancellationToken = cancellationToken;
     }
 
+    public event EventHandler<string?>? OutputChanged;
+    public event EventHandler<string?>? ErrorChanged;
+
     #region generate-inkatlas.exe
+
     /// <summary>
     /// Generate an .inkatlas file from a folder of images.
     /// </summary>
@@ -32,90 +49,6 @@ internal class Cli
     {
         var arguments = $"\"{iconFolderPath}\" \"{outputFolderPath}\" \"{atlasName}\"";
         await ExecuteCommandAsync(arguments, _cancellationToken);
-    }
-    #endregion
-
-    #region WolvenKit CLI
-
-    /// <summary>
-    /// Convert a .inkatlas.json file to a .inkatlas file.
-    /// </summary>
-    /// <param name="inkAtlasJsonPath">The full path to the .inkatlas.json file.</param>
-    /// <param name="token">A cancellation token for task cancellation.</param>
-    /// <param name="progress">Progress reporter to track the operation's progress.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    public async Task ConvertToInkAtlasFileAsync(string inkAtlasJsonPath, CancellationToken token, IProgress<int>? progress = null)
-    {
-        var arguments = $"convert deserialize \"{inkAtlasJsonPath}\"";
-        await ExecuteCommandAsync(arguments, token, progress);
-    }
-
-    /// <summary>
-    /// Convert a .inkatlas file to a .inkatlas.json file.
-    /// </summary>
-    /// <param name="inkAtlasPath">The full path to the .inkatlas file.</param>
-    /// <param name="token">A cancellation token for task cancellation.</param>
-    /// <param name="progress">Progress reporter to track the operation's progress.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    public async Task ConvertToInkAtlasJsonFileAsync(string inkAtlasPath, CancellationToken token, IProgress<int>? progress = null)
-    {
-        var arguments = $"convert serialize \"{inkAtlasPath}\"";
-        await ExecuteCommandAsync(arguments, token, progress);
-    }
-
-    /// <summary>
-    /// Import a folder of raw files to a WolvenKit faux project.
-    /// </summary>
-    /// <param name="sourcePath">The full path to the raw input files.</param>
-    /// <param name="token">A cancellation token for task cancellation.</param>
-    /// <param name="progress">Progress reporter to track the operation's progress.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    public async Task ImportToWolvenKitProjectAsync(string sourcePath, CancellationToken token, IProgress<int>? progress = null)
-    {
-        var arguments = $"import -p \"{sourcePath}\"";
-        await ExecuteCommandAsync(arguments, token, progress);
-    }
-
-    /// <summary>
-    /// Pack (compress) the contents of a directory into a .archive file. This essentially "builds" the faux mod.
-    /// </summary>
-    /// <param name="modPath">The path to a faux mod directory.</param>
-    /// <param name="outputFolder">The output folder to store the packed .archive file in.</param>
-    /// <param name="token">A cancellation token for task cancellation.</param>
-    /// <param name="progress">Progress reporter to track the operation's progress.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    public async Task PackArchiveAsync(string modPath, string outputFolder, CancellationToken token, IProgress<int>? progress = null)
-    {
-        var arguments = $"pack -p \"{modPath}\" -o \"{outputFolder}\"";
-        await ExecuteCommandAsync(arguments, token, progress);
-    }
-
-    /// <summary>
-    /// Unpack (extract) a .archive file to the specified output folder.
-    /// </summary>
-    /// <param name="archivePath">The full path to the .archive file.</param>
-    /// <param name="outputFolder">The output folder to store the extracted contents in.</param>
-    /// <param name="token">A cancellation token for task cancellation.</param>
-    /// <param name="progress">Progress reporter to track the operation's progress.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    public async Task UnpackArchiveAsync(string archivePath, string outputFolder, CancellationToken token, IProgress<int>? progress = null)
-    {
-        var arguments = $"unbundle -p \"{archivePath}\" -o \"{outputFolder}\"";
-        await ExecuteCommandAsync(arguments, token, progress);
-    }
-
-    /// <summary>
-    /// Export an .xbm file to a .png file.
-    /// </summary>
-    /// <param name="modPath">The path to the folder containing the .xbm files to export.</param>
-    /// <param name="outputFolder">The output folder to store the exported .png files.</param>
-    /// <param name="token">A cancellation token for task cancellation.</param>
-    /// <param name="progress">Progress reporter to track the operation's progress.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    public async Task ExportPngAsync(string modPath, string outputFolder, CancellationToken token, IProgress<int>? progress = null)
-    {
-        var arguments = $"export --uext png -p \"{modPath}\" -o \"{outputFolder}\"";
-        await ExecuteCommandAsync(arguments, token, progress);
     }
 
     #endregion
@@ -152,7 +85,7 @@ internal class Cli
             var processTask = Task.Run(async () =>
             {
                 // Process the output and report progress periodically
-                int lastProgress = 0;
+                var lastProgress = 0;
                 while (!process.HasExited)
                 {
                     // Assume the process is making progress in increments
@@ -196,4 +129,95 @@ internal class Cli
             AuLogger.GetCurrentLogger<Cli>("ExecuteCommand").Error(error);
         }
     }
+
+    #region WolvenKit CLI
+
+    /// <summary>
+    /// Convert a .inkatlas.json file to a .inkatlas file.
+    /// </summary>
+    /// <param name="inkAtlasJsonPath">The full path to the .inkatlas.json file.</param>
+    /// <param name="token">A cancellation token for task cancellation.</param>
+    /// <param name="progress">Progress reporter to track the operation's progress.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    public async Task ConvertToInkAtlasFileAsync(string inkAtlasJsonPath, CancellationToken token,
+        IProgress<int>? progress = null)
+    {
+        var arguments = $"convert deserialize \"{inkAtlasJsonPath}\"";
+        await ExecuteCommandAsync(arguments, token, progress);
+    }
+
+    /// <summary>
+    /// Convert a .inkatlas file to a .inkatlas.json file.
+    /// </summary>
+    /// <param name="inkAtlasPath">The full path to the .inkatlas file.</param>
+    /// <param name="token">A cancellation token for task cancellation.</param>
+    /// <param name="progress">Progress reporter to track the operation's progress.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    public async Task ConvertToInkAtlasJsonFileAsync(string inkAtlasPath, CancellationToken token,
+        IProgress<int>? progress = null)
+    {
+        var arguments = $"convert serialize \"{inkAtlasPath}\"";
+        await ExecuteCommandAsync(arguments, token, progress);
+    }
+
+    /// <summary>
+    /// Import a folder of raw files to a WolvenKit faux project.
+    /// </summary>
+    /// <param name="sourcePath">The full path to the raw input files.</param>
+    /// <param name="token">A cancellation token for task cancellation.</param>
+    /// <param name="progress">Progress reporter to track the operation's progress.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    public async Task ImportToWolvenKitProjectAsync(string sourcePath, CancellationToken token,
+        IProgress<int>? progress = null)
+    {
+        var arguments = $"import -p \"{sourcePath}\"";
+        await ExecuteCommandAsync(arguments, token, progress);
+    }
+
+    /// <summary>
+    /// Pack (compress) the contents of a directory into a .archive file. This essentially "builds" the faux mod.
+    /// </summary>
+    /// <param name="modPath">The path to a faux mod directory.</param>
+    /// <param name="outputFolder">The output folder to store the packed .archive file in.</param>
+    /// <param name="token">A cancellation token for task cancellation.</param>
+    /// <param name="progress">Progress reporter to track the operation's progress.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    public async Task PackArchiveAsync(string modPath, string outputFolder, CancellationToken token,
+        IProgress<int>? progress = null)
+    {
+        var arguments = $"pack -p \"{modPath}\" -o \"{outputFolder}\"";
+        await ExecuteCommandAsync(arguments, token, progress);
+    }
+
+    /// <summary>
+    /// Unpack (extract) a .archive file to the specified output folder.
+    /// </summary>
+    /// <param name="archivePath">The full path to the .archive file.</param>
+    /// <param name="outputFolder">The output folder to store the extracted contents in.</param>
+    /// <param name="token">A cancellation token for task cancellation.</param>
+    /// <param name="progress">Progress reporter to track the operation's progress.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    public async Task UnpackArchiveAsync(string archivePath, string outputFolder, CancellationToken token,
+        IProgress<int>? progress = null)
+    {
+        var arguments = $"unbundle -p \"{archivePath}\" -o \"{outputFolder}\"";
+        await ExecuteCommandAsync(arguments, token, progress);
+    }
+
+    /// <summary>
+    /// Export an .xbm file to a .png file.
+    /// </summary>
+    /// <param name="modPath">The path to the folder containing the .xbm files to export.</param>
+    /// <param name="outputFolder">The output folder to store the exported .png files.</param>
+    /// <param name="token">A cancellation token for task cancellation.</param>
+    /// <param name="progress">Progress reporter to track the operation's progress.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    public async Task ExportPngAsync(string modPath, string outputFolder, CancellationToken token,
+        IProgress<int>? progress = null)
+    {
+        var arguments = $"export --uext png -p \"{modPath}\" -o \"{outputFolder}\"";
+        await ExecuteCommandAsync(arguments, token, progress);
+    }
+
+    #endregion
 }

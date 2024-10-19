@@ -1,4 +1,20 @@
-﻿using AetherUtils.Core.Logging;
+﻿// PathHelper.cs : WIG.Lib
+// Copyright (C) 2024  Ethan Hann
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+using AetherUtils.Core.Logging;
 using SharpCompress.Archives;
 using SharpCompress.Archives.Zip;
 using SharpCompress.Common;
@@ -103,7 +119,8 @@ public class PathHelper
                     if (string.IsNullOrEmpty(destinationDir)) continue;
 
                     Directory.CreateDirectory(destinationDir);
-                    entry.WriteToFile(destinationPath, new ExtractionOptions() { ExtractFullPath = true, Overwrite = true });
+                    entry.WriteToFile(destinationPath,
+                        new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
                 }
             }
         });
@@ -120,20 +137,18 @@ public class PathHelper
         try
         {
             // Ensure the base path ends with a directory separator
-            if (!basePath.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
-            {
-                basePath += System.IO.Path.DirectorySeparatorChar;
-            }
+            if (!basePath.EndsWith(Path.DirectorySeparatorChar.ToString())) basePath += Path.DirectorySeparatorChar;
 
-            Uri baseUri = new Uri(basePath);
-            Uri fullUri = new Uri(fullPath);
+            var baseUri = new Uri(basePath);
+            var fullUri = new Uri(fullPath);
 
             // Get relative Uri
-            Uri relativeUri = baseUri.MakeRelativeUri(fullUri);
+            var relativeUri = baseUri.MakeRelativeUri(fullUri);
 
             // Convert to string and replace forward slashes with backslashes
             return Uri.UnescapeDataString(relativeUri.ToString()).Replace('/', '\\');
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             AuLogger.GetCurrentLogger<PathHelper>("GetRelativePath").Error(ex, ex.Message);
             return string.Empty;
