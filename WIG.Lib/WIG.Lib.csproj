@@ -7,12 +7,40 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyVersion>1.0.44.0</AssemblyVersion>
     <FileVersion>1.0.44.0</FileVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>WIG.Lib</PackageId>
+    <Title>Wolven Icon Generator</Title>
+    <Authors>Ethan Hann</Authors>
+    <Description>The Wolven Icon Generator is a specialized library for generating and managing custom icons for the CyberRadio-Assistant (CRA) project. This library provides tools for converting PNG images into .archive files and handling icon metadata for Cyberpunk 2077 modding projects. It simplifies icon creation, extraction, and packaging workflows, designed for developers working with WolvenKit and other modding tools.
+
+Key Features:
+
+Generate .archive files from PNG images for custom icons.
+Efficient icon extraction and management.
+Custom InkAtlas generation for use with mods.
+Asynchronous operations support for long-running tasks with progress reporting.</Description>
+    <Copyright>2024 Ethan Hann</Copyright>
+    <PackageProjectUrl>https://github.com/ethan-hann/WolvenIconGenerator</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/ethan-hann/WolvenIconGenerator/blob/main/LICENSE</PackageLicenseUrl>
+    <PackageIcon>Resources\wolvenIconGeneratorLogo.png</PackageIcon>
+    <RepositoryUrl>https://github.com/ethan-hann/WolvenIconGenerator</RepositoryUrl>
+    <PackageTags>Cyberpunk, modding, WolvenKit, icons, archive, generator</PackageTags>
+    <PackageReleaseNotes>Initial release with support for basic icon generation and integration with CyberRadio-Assistant.
+Includes asynchronous tasks for improved performance during long-running operations.</PackageReleaseNotes>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="AetherUtils.Core" Version="1.0.8" />
     <PackageReference Include="SharpCompress" Version="0.38.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Resources\wolvenIconGeneratorLogo.ico">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

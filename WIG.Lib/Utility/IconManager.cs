@@ -989,6 +989,9 @@ public class IconManager : IDisposable
             if (inkAtlasPath == null)
                 throw new InvalidOperationException("The relative path could not be determined.");
 
+            if (_wolvenKitCli == null)
+                throw new InvalidOperationException("The Wolven Kit Cli path could not be determined.");
+            
             await _wolvenKitCli.ConvertToInkAtlasJsonFileAsync(inkAtlasFile, token);
 
             var inkAtlasJsonFile = Directory.GetFiles(projectBasePath, "*.json", SearchOption.AllDirectories)
