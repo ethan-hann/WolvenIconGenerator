@@ -92,6 +92,16 @@ namespace WIG.Lib.Utility
         public string? ImageExportDirectory { get; private set; }
 
         /// <summary>
+        /// Gets the path to the imported working directory. Defaults to <c>%LOCALAPPDATA%\RadioExt-Helper\tools\imported_working_directory</c>.
+        /// </summary>
+        public string? ImportedWorkingDirectory { get; private set; }
+
+        /// <summary>
+        /// Gets the path to the extracted working directory. Defaults to <c>%LOCALAPPDATA%\RadioExt-Helper\tools\extracted_working_directory</c>.
+        /// </summary>
+        public string? ExtractedWorkingDirectory { get; private set; }
+
+        /// <summary>
         /// Gets a value indicating whether the icon manager has been initialized.
         /// </summary>
         public bool IsInitialized { get; private set; }
@@ -126,6 +136,11 @@ namespace WIG.Lib.Utility
             GC.SuppressFinalize(this);
             CleanupResources();
         }
+
+        /// <summary>
+        /// Deletes the temporary directories and resets the paths for the icon generator.
+        /// </summary>
+        public void ClearTempData() => TearDownPaths();
 
         /// <summary>
         /// Cleans up any resources used by the icon manager. This mainly involves deleting the temporary directory: <see cref="WolvenKitTempDirectory"/>.
@@ -182,13 +197,17 @@ namespace WIG.Lib.Utility
             }
         }
 
-        private void OnCliErrorOccurred(string error)
+        private void OnCliErrorOccurred(string? error)
         {
+            if (error == null) return;
+
             CliStatus?.Invoke(this, new StatusEventArgs(error, true, _currentProgress));
         }
 
-        private void OnCliProgressChanged(string output)
+        private void OnCliProgressChanged(string? output)
         {
+            if (output == null) return;
+
             CliStatus?.Invoke(this, new StatusEventArgs(output, false, _currentProgress));
         }
 
@@ -204,15 +223,50 @@ namespace WIG.Lib.Utility
                 WolvenKitTempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
                 ImageImportDirectory = Path.Combine(WorkingDirectory, "imported_pngs");
                 ImageExportDirectory = Path.Combine(WorkingDirectory, "extracted_pngs");
+                ImportedWorkingDirectory = Path.Combine(WorkingDirectory, "imported_working_directory");
+                ExtractedWorkingDirectory = Path.Combine(WorkingDirectory, "extracted_working_directory");
 
                 Directory.CreateDirectory(WorkingDirectory);
                 Directory.CreateDirectory(WolvenKitTempDirectory);
                 Directory.CreateDirectory(ImageImportDirectory);
                 Directory.CreateDirectory(ImageExportDirectory);
+                Directory.CreateDirectory(ImportedWorkingDirectory);
+                Directory.CreateDirectory(ExtractedWorkingDirectory);
             }
             catch (Exception e)
             {
-                AuLogger.GetCurrentLogger<IconManager>("SetupRequiredPaths").Error(e.Message);
+                AuLogger.GetCurrentLogger<IconManager>("SetupRequiredPaths").Error(e, e.Message);
+            }
+        }
+
+        /// <summary>
+        /// Deletes the temporary directories and resets the paths for the icon generator.
+        /// </summary>
+        private void TearDownPaths()
+        {
+            try
+            {
+                if (Directory.Exists(WolvenKitTempDirectory))
+                    Directory.Delete(WolvenKitTempDirectory, true);
+
+                if (Directory.Exists(ImageImportDirectory))
+                    Directory.Delete(ImageImportDirectory, true);
+
+                if (Directory.Exists(ImageExportDirectory))
+                    Directory.Delete(ImageExportDirectory, true);
+
+                if (Directory.Exists(ImportedWorkingDirectory))
+                    Directory.Delete(ImportedWorkingDirectory, true);
+
+                if (Directory.Exists(ExtractedWorkingDirectory))
+                    Directory.Delete(ExtractedWorkingDirectory, true);
+
+                IsInitialized = false;
+                SetupRequiredPaths();
+            }
+            catch (Exception e)
+            {
+                AuLogger.GetCurrentLogger<IconManager>("TearDownPaths").Error(e, e.Message);
             }
         }
 
@@ -231,6 +285,9 @@ namespace WIG.Lib.Utility
                 if (WorkingDirectory == null)
                     throw new InvalidOperationException("The working directory is null.");
 
+                if (ImportedWorkingDirectory == null)
+                    throw new InvalidOperationException("The imported working directory is null.");
+
                 if (ImageImportDirectory == null)
                     throw new InvalidOperationException("The image import directory is null.");
 
@@ -245,7 +302,7 @@ namespace WIG.Lib.Utility
                 outputDictionary["importedPngs"] = importedPngsPath;
 
                 // Create the base path for the project
-                var projectBasePath = Path.Combine(WorkingDirectory, "imported_working_directory", $"{atlasName}-{guid}");
+                var projectBasePath = Path.Combine(ImportedWorkingDirectory, $"{atlasName}-{guid}");
                 if (overwrite && Directory.Exists(projectBasePath))
                     Directory.Delete(projectBasePath, true);
                 Directory.CreateDirectory(projectBasePath);
@@ -304,6 +361,9 @@ namespace WIG.Lib.Utility
                 if (WorkingDirectory == null)
                     throw new InvalidOperationException("The working directory is null.");
 
+                if (ExtractedWorkingDirectory == null)
+                    throw new InvalidOperationException("The extracted working directory is null.");
+
                 if (ImageExportDirectory == null)
                     throw new InvalidOperationException("The image export directory is null.");
 
@@ -318,7 +378,7 @@ namespace WIG.Lib.Utility
                 outputDictionary["exportedPngs"] = exportedPngsPath;
 
                 // Create the base path for the project
-                var projectBasePath = Path.Combine(WorkingDirectory, "extracted_working_directory", $"{atlasName}-{guid}");
+                var projectBasePath = Path.Combine(ExtractedWorkingDirectory, $"{atlasName}-{guid}");
                 if (overwrite && Directory.Exists(projectBasePath))
                     Directory.Delete(projectBasePath, true);
                 Directory.CreateDirectory(projectBasePath);
