@@ -326,14 +326,26 @@ public class WolvenIcon : INotifyPropertyChanged, ICloneable, IEquatable<WolvenI
 
     /// <summary>
     /// Performs a check on the icon's properties to ensure they are valid (not null and/or empty).
+    /// If the icon is from an archive, the <see cref="ArchivePath"/> and <see cref="Sha256HashOfArchiveFile"/> must be set but the <see cref="ImagePath"/> can be empty.
     /// </summary>
     /// <returns><c>true</c> if the icon is valid; <c>false</c> otherwise.</returns>
     public bool CheckIconValid()
     {
-        var isValid = !string.IsNullOrEmpty(ImagePath) && !string.IsNullOrEmpty(ArchivePath) &&
+        var isValid = false;
+
+        if (IsFromArchive)
+        {
+            isValid = !string.IsNullOrEmpty(ArchivePath) && !string.IsNullOrEmpty(Sha256HashOfArchiveFile);
+            isValid &= Path.Exists(ArchivePath);
+        }
+        else
+        {
+            isValid = !string.IsNullOrEmpty(ImagePath) && !string.IsNullOrEmpty(ArchivePath) &&
                       !string.IsNullOrEmpty(Sha256HashOfArchiveFile);
-        isValid &= Path.Exists(ArchivePath);
-        isValid &= Path.Exists(ImagePath);
+            isValid &= Path.Exists(ArchivePath);
+            isValid &= Path.Exists(ImagePath);
+        }
+        
         return isValid;
     }
 

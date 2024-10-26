@@ -5,8 +5,8 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AssemblyVersion>1.0.44.0</AssemblyVersion>
-    <FileVersion>1.0.44.0</FileVersion>
+    <AssemblyVersion>1.0.45.0</AssemblyVersion>
+    <FileVersion>1.0.45.0</FileVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>WIG.Lib</PackageId>
     <Title>Wolven Icon Generator</Title>
@@ -20,7 +20,7 @@
 Includes asynchronous tasks for improved performance during long-running operations.</PackageReleaseNotes>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <RepositoryType>Git</RepositoryType>
-    <Version>1.0.44</Version>
+    <Version>1.0.45</Version>
     <PackageIcon>logo.png</PackageIcon>
     <NeutralLanguage>en</NeutralLanguage>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
