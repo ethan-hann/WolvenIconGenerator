@@ -20,7 +20,7 @@
 Includes asynchronous tasks for improved performance during long-running operations.</PackageReleaseNotes>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <RepositoryType>Git</RepositoryType>
-    <Version>1.0.45</Version>
+    <Version>1.0.46</Version>
     <PackageIcon>logo.png</PackageIcon>
     <NeutralLanguage>en</NeutralLanguage>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
