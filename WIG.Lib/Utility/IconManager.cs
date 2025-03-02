@@ -156,7 +156,7 @@ public class IconManager : IDisposable
             // Subscribe to CLI events
             _wolvenKitCli.OutputChanged += (sender, output) => OnCliProgressChanged(output);
             _wolvenKitCli.ErrorChanged += (sender, error) => OnCliErrorOccurred(error);
-
+            
             IsInitialized = true;
         }
         catch (Exception e)
@@ -1057,6 +1057,37 @@ public class IconManager : IDisposable
     public void CancelOperation()
     {
         _cancellationTokenSource?.Cancel();
+    }
+
+    /// <summary>
+    /// Copy the Oodle DLL to the temporary WolvenKit path for use in icon generation and extraction.
+    /// <para>For legal purposes, we cannot distribute the Oodle DLL as it is owned by Epic Games. However, it is included
+    /// in the game files.</para>
+    /// </summary>
+    /// <param name="pathToOodleDll">The full path to the Oodle DLL on the system.</param>
+    public void CopyOodleDllToWolvenKitPath(string pathToOodleDll)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(WolvenKitTempDirectory))
+            {
+                AuLogger.GetCurrentLogger<IconManager>("CopyOodleDllToWolvenKitPath")
+                    .Error("Wolven Kit Temp Directory could not be determined.");
+            }
+            if (!File.Exists(pathToOodleDll))
+            {
+                AuLogger.GetCurrentLogger<IconManager>("CopyOodleDllToWolvenKitPath")
+                    .Error($"The path does not exist: {pathToOodleDll}");
+                return;
+            }
+            
+            File.Copy(pathToOodleDll, 
+                Path.Combine(WolvenKitTempDirectory, Path.GetFileName(pathToOodleDll)), true);
+        }
+        catch (Exception ex)
+        {
+            AuLogger.GetCurrentLogger<IconManager>().Error(ex, ex.Message);
+        }
     }
 
     #endregion
