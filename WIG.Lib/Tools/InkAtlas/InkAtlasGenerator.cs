@@ -52,7 +52,7 @@ internal class InkAtlasGenerator
             return;
         }
 
-        var pngFiles = Directory.GetFiles(iconFolderPath, "*.png");
+        string[] pngFiles = Directory.GetFiles(iconFolderPath, "*.png");
         if (pngFiles.Length == 0)
         {
             OnErrorChanged("Error: The entered folder does not contain any PNG files.");
@@ -67,9 +67,9 @@ internal class InkAtlasGenerator
     private async Task ProcessImagesAndGenerateInkAtlas(string outputFolderPath, string atlasName, string[] pngFiles,
         CancellationToken token, IProgress<int>? progress)
     {
-        var images = new List<ImageData>();
+        List<ImageData> images = new();
 
-        foreach (var pngFile in pngFiles)
+        foreach (string pngFile in pngFiles)
         {
             token.ThrowIfCancellationRequested(); // Check if cancellation was requested
 
@@ -87,7 +87,7 @@ internal class InkAtlasGenerator
                     continue;
                 }
 
-                var img = Image.Load<Rgba32>(pngFile);
+                Image<Rgba32> img = Image.Load<Rgba32>(pngFile);
 
                 if (img.Width == 0 || img.Height == 0)
                 {
@@ -119,26 +119,26 @@ internal class InkAtlasGenerator
         CancellationToken token, IProgress<int>? progress)
     {
         const int maxWidth = 2048;
-        var grid = OrganizeImagesIntoGrid(images, maxWidth);
-        var totalWidth = CalculateTotalWidth(grid, maxWidth);
-        var totalHeight = CalculateTotalHeight(grid);
+        List<List<ImageData>> grid = OrganizeImagesIntoGrid(images, maxWidth);
+        int totalWidth = CalculateTotalWidth(grid, maxWidth);
+        int totalHeight = CalculateTotalHeight(grid);
 
-        using var combinedImage = new Image<Rgba32>(totalWidth, totalHeight);
+        using Image<Rgba32> combinedImage = new(totalWidth, totalHeight);
         combinedImage.Mutate(ctx => ctx.BackgroundColor(Color.Transparent)); // Set background to transparent
 
-        var jsonData = CreateAtlasJson(grid, combinedImage, totalWidth, totalHeight, atlasName);
+        InkAtlasData jsonData = CreateAtlasJson(grid, combinedImage, totalWidth, totalHeight, atlasName);
 
         await SaveImagesAndJsonAsync(combinedImage, outputFolderPath, atlasName, jsonData, token, progress);
     }
 
     private List<List<ImageData>> OrganizeImagesIntoGrid(List<ImageData> images, int maxWidth)
     {
-        var grid = new List<List<ImageData>>();
-        var currentRow = new List<ImageData>();
-        var currentWidth = 0;
-        var maxHeightInRow = 0;
+        List<List<ImageData>> grid = new();
+        List<ImageData> currentRow = new();
+        int currentWidth = 0;
+        int maxHeightInRow = 0;
 
-        foreach (var imageData in images)
+        foreach (ImageData imageData in images)
             if (currentWidth + imageData.Image.Width <= maxWidth)
             {
                 currentRow.Add(imageData);
@@ -160,7 +160,7 @@ internal class InkAtlasGenerator
 
     private int CalculateTotalWidth(List<List<ImageData>> grid, int maxWidth)
     {
-        var totalWidth = grid.Select(row => row.Sum(img => img.Image.Width + 1)).Prepend(0).Max();
+        int totalWidth = grid.Select(row => row.Sum(img => img.Image.Width + 1)).Prepend(0).Max();
         return Math.Min(totalWidth, maxWidth);
     }
 
@@ -172,7 +172,7 @@ internal class InkAtlasGenerator
     private InkAtlasData CreateAtlasJson(List<List<ImageData>> grid, Image<Rgba32> combinedImage, int totalWidth,
         int totalHeight, string atlasName)
     {
-        var jsonData = new InkAtlasData
+        InkAtlasData jsonData = new()
         {
             Header = new Header(),
             Data = new Data()
@@ -181,20 +181,20 @@ internal class InkAtlasGenerator
         //Add the depot path values
         jsonData.Data.RootChunk.Slots.Elements[0].Texture.DepotPath.Value = $@"base\icon\{atlasName}.xbm";
 
-        var currentY = 0;
-        foreach (var row in grid)
+        int currentY = 0;
+        foreach (List<ImageData> row in grid)
         {
-            var maxHeightInRow = row.Max(img => img.Image.Height);
-            var currentX = 0;
+            int maxHeightInRow = row.Max(img => img.Image.Height);
+            int currentX = 0;
 
-            foreach (var imageData in row)
+            foreach (ImageData imageData in row)
             {
-                var topPixel = currentY + (maxHeightInRow - imageData.Image.Height) / 2;
+                int topPixel = currentY + (maxHeightInRow - imageData.Image.Height) / 2;
 
-                var x = currentX;
+                int x = currentX;
                 combinedImage.Mutate(ctx => ctx.DrawImage(imageData.Image, new Point(x, topPixel), 1));
 
-                var partData = new InkTextureAtlasMapper
+                InkTextureAtlasMapper partData = new()
                 {
                     Type = "inkTextureAtlasMapper",
                     ClippingRectInPixels = new ClippingRectInPixels
@@ -235,13 +235,13 @@ internal class InkAtlasGenerator
     {
         if (!Directory.Exists(outputFolderPath)) Directory.CreateDirectory(outputFolderPath);
 
-        var combinedImagePath = Path.Combine(outputFolderPath, $"{atlasName}.png");
+        string combinedImagePath = Path.Combine(outputFolderPath, $"{atlasName}.png");
         await combinedImage.SaveAsPngAsync(combinedImagePath, token);
         OnOutputChanged($"Combined image saved to {combinedImagePath}");
 
         // Use custom JSON class to save the JSON data
-        var jsonOutputPath = Path.Combine(outputFolderPath, $"{atlasName}.inkatlas.json");
-        var jsonSaved = _jsonData.SaveJson(jsonOutputPath, jsonData);
+        string jsonOutputPath = Path.Combine(outputFolderPath, $"{atlasName}.inkatlas.json");
+        bool jsonSaved = _jsonData.SaveJson(jsonOutputPath, jsonData);
         if (jsonSaved)
             OnOutputChanged($"The .inkatlas data was saved to {jsonOutputPath}");
         else

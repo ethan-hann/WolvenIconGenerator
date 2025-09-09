@@ -31,11 +31,11 @@ public static class AssemblyExtensions
     /// <returns>A string representing the resource or <see cref="string.Empty"/> if the resource could not be found.</returns>
     public static string ExtractEmbeddedResource(this Assembly assembly, string resourceName)
     {
-        var tempPath = Path.Combine(Path.GetTempPath(), resourceName);
-        using var resource = assembly.GetManifestResourceStream(resourceName);
+        string tempPath = Path.Combine(Path.GetTempPath(), resourceName);
+        using Stream? resource = assembly.GetManifestResourceStream(resourceName);
         if (resource == null) return string.Empty;
 
-        using var file = new FileStream(tempPath, FileMode.Create, FileAccess.Write);
+        using FileStream file = new(tempPath, FileMode.Create, FileAccess.Write);
         resource?.CopyTo(file);
 
         return tempPath;

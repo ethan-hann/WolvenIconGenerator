@@ -1,8 +1,5 @@
-﻿using AetherUtils.Core.Logging;
-using System.Drawing;
-using WIG.Lib.Models;
+﻿using WIG.Lib.Models;
 using WIG.Lib.Utility;
-using WolvenIconGenerator.Utility;
 
 namespace WolvenIconGenerator.Custom_Controls
 {
@@ -44,7 +41,7 @@ namespace WolvenIconGenerator.Custom_Controls
             // Assuming the max value is initially unknown or very high
             int maxValue = 250;
 
-            var progress = new Progress<int>(value =>
+            Progress<int> progress = new(value =>
             {
                 // Scale progress to fit between 0 and 100
                 int scaledValue = (value * 100) / maxValue;

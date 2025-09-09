@@ -37,14 +37,14 @@ public class PathHelper
     /// <returns>A task that represents the current async operation.</returns>
     public static async Task DownloadFileAsync(string fileUrl, string destinationFilePath)
     {
-        using var client = new HttpClient();
-        using var response = await client.GetAsync(fileUrl, HttpCompletionOption.ResponseHeadersRead);
+        using HttpClient client = new();
+        using HttpResponseMessage response = await client.GetAsync(fileUrl, HttpCompletionOption.ResponseHeadersRead);
         response.EnsureSuccessStatusCode();
 
-        await using var contentStream = await response.Content.ReadAsStreamAsync();
-        var fileStream = new FileStream(destinationFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192,
+        await using Stream contentStream = await response.Content.ReadAsStreamAsync();
+        FileStream fileStream = new(destinationFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192,
             true);
-        await using var stream = fileStream.ConfigureAwait(false);
+        await using System.Runtime.CompilerServices.ConfiguredAsyncDisposable stream = fileStream.ConfigureAwait(false);
 
         await contentStream.CopyToAsync(fileStream);
     }
@@ -59,12 +59,12 @@ public class PathHelper
         if (string.IsNullOrWhiteSpace(imageUrl))
             return ConvertToBitmap(null);
 
-        using var client = new HttpClient();
-        using var response = await client.GetAsync(imageUrl, HttpCompletionOption.ResponseHeadersRead);
+        using HttpClient client = new();
+        using HttpResponseMessage response = await client.GetAsync(imageUrl, HttpCompletionOption.ResponseHeadersRead);
         response.EnsureSuccessStatusCode();
 
-        await using var contentStream = await response.Content.ReadAsStreamAsync();
-        var image = await Image.LoadAsync<Rgba32>(contentStream);
+        await using Stream contentStream = await response.Content.ReadAsStreamAsync();
+        Image<Rgba32> image = await Image.LoadAsync<Rgba32>(contentStream);
         return ConvertToBitmap(image);
     }
 
@@ -78,7 +78,7 @@ public class PathHelper
     {
         try
         {
-            using var memoryStream = new MemoryStream();
+            using MemoryStream memoryStream = new();
 
             image.SaveAsBmp(memoryStream);
             memoryStream.Seek(0, SeekOrigin.Begin);
@@ -109,22 +109,20 @@ public class PathHelper
 
         await Task.Run(() =>
         {
-            using (var archive = ZipArchive.Open(zipFilePath))
+            using ZipArchive archive = ZipArchive.Open(zipFilePath);
+            foreach (ZipArchiveEntry? entry in archive.Entries.Where(entry => !entry.IsDirectory))
             {
-                foreach (var entry in archive.Entries.Where(entry => !entry.IsDirectory))
-                {
-                    var entryKey = entry.Key;
-                    if (string.IsNullOrEmpty(entryKey)) continue;
+                string? entryKey = entry.Key;
+                if (string.IsNullOrEmpty(entryKey)) continue;
 
-                    var destinationPath = Path.Combine(destinationDirectory, entryKey);
-                    var destinationDir = Path.GetDirectoryName(destinationPath);
+                string destinationPath = Path.Combine(destinationDirectory, entryKey);
+                string? destinationDir = Path.GetDirectoryName(destinationPath);
 
-                    if (string.IsNullOrEmpty(destinationDir)) continue;
+                if (string.IsNullOrEmpty(destinationDir)) continue;
 
-                    Directory.CreateDirectory(destinationDir);
-                    entry.WriteToFile(destinationPath,
-                        new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
-                }
+                Directory.CreateDirectory(destinationDir);
+                entry.WriteToFile(destinationPath,
+                    new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
             }
         });
     }
@@ -142,11 +140,11 @@ public class PathHelper
             // Ensure the base path ends with a directory separator
             if (!basePath.EndsWith(Path.DirectorySeparatorChar.ToString())) basePath += Path.DirectorySeparatorChar;
 
-            var baseUri = new Uri(basePath);
-            var fullUri = new Uri(fullPath);
+            Uri baseUri = new(basePath);
+            Uri fullUri = new(fullPath);
 
             // Get relative Uri
-            var relativeUri = baseUri.MakeRelativeUri(fullUri);
+            Uri relativeUri = baseUri.MakeRelativeUri(fullUri);
 
             // Convert to string and replace forward slashes with backslashes
             return Uri.UnescapeDataString(relativeUri.ToString()).Replace('/', '\\');

@@ -25,12 +25,12 @@ namespace WolvenIconGenerator.Utility
                 return;
             }
 
-            var json = JsonSerializer.ToJson(icon);
+            string json = JsonSerializer.ToJson(icon);
 
             using NamedPipeClientStream pipeClient = new(".", "CRANamedPipe", PipeDirection.Out);
             pipeClient.Connect(TimeSpan.FromSeconds(5));
 
-            using var writer = new StreamWriter(pipeClient);
+            using StreamWriter writer = new(pipeClient);
             writer.Write(json);
             writer.Flush();
         }

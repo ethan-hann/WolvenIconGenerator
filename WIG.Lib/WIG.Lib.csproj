@@ -5,13 +5,13 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AssemblyVersion>1.0.45.0</AssemblyVersion>
-    <FileVersion>1.0.45.0</FileVersion>
+    <AssemblyVersion>1.0.47.0</AssemblyVersion>
+    <FileVersion>1.0.47.0</FileVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>WIG.Lib</PackageId>
     <Title>Wolven Icon Generator</Title>
     <Authors>Ethan Hann</Authors>
-    <Description>A specialized library for generating and managing custom icons for Cyberpunk 2077 modding projects.</Description>
+    <Description>A specialized library for generating and managing custom icons and radio stations for Cyberpunk 2077 modding projects.</Description>
     <Copyright>2024 Ethan Hann</Copyright>
     <PackageProjectUrl>https://github.com/ethan-hann/WolvenIconGenerator</PackageProjectUrl>
     <RepositoryUrl>https://github.com/ethan-hann/WolvenIconGenerator</RepositoryUrl>
@@ -20,7 +20,7 @@
 Includes asynchronous tasks for improved performance during long-running operations.</PackageReleaseNotes>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <RepositoryType>Git</RepositoryType>
-    <Version>1.0.46</Version>
+    <Version>1.0.47</Version>
     <PackageIcon>logo.png</PackageIcon>
     <NeutralLanguage>en</NeutralLanguage>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -38,9 +38,10 @@ Includes asynchronous tasks for improved performance during long-running operati
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AetherUtils.Core" Version="1.0.14" />
-    <PackageReference Include="SharpCompress" Version="0.39.0" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.8" />
+    <PackageReference Include="AetherUtils.Core" Version="1.0.15" />
+    <PackageReference Include="CsvHelper" Version="33.1.0" />
+    <PackageReference Include="SharpCompress" Version="0.40.0" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
   </ItemGroup>
 
   <ItemGroup>

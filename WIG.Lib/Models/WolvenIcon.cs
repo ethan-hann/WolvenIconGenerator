@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-using System.ComponentModel;
 using AetherUtils.Core.Logging;
 using Newtonsoft.Json;
+using System.ComponentModel;
 using WIG.Lib.Utility;
 
 namespace WIG.Lib.Models;
@@ -331,7 +331,7 @@ public class WolvenIcon : INotifyPropertyChanged, ICloneable, IEquatable<WolvenI
     /// <returns><c>true</c> if the icon is valid; <c>false</c> otherwise.</returns>
     public bool CheckIconValid()
     {
-        var isValid = false;
+        bool isValid = false;
 
         if (IsFromArchive)
         {
@@ -345,7 +345,7 @@ public class WolvenIcon : INotifyPropertyChanged, ICloneable, IEquatable<WolvenI
             isValid &= Path.Exists(ArchivePath);
             isValid &= Path.Exists(ImagePath);
         }
-        
+
         return isValid;
     }
 

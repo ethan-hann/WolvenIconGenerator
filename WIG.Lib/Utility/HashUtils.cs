@@ -32,11 +32,11 @@ public static class HashUtils
     public static string ComputeSha256Hash(string file, bool useLowerInvariant)
     {
         // Calculate the hash of the icon file
-        using var sha256 = SHA256.Create();
-        using var fileStream = File.OpenRead(file);
+        using SHA256 sha256 = SHA256.Create();
+        using FileStream fileStream = File.OpenRead(file);
 
-        var hashBytes = sha256.ComputeHash(fileStream);
-        var fileHash = BitConverter.ToString(hashBytes).Replace("-", "");
+        byte[] hashBytes = sha256.ComputeHash(fileStream);
+        string fileHash = BitConverter.ToString(hashBytes).Replace("-", "");
         fileHash = useLowerInvariant ? fileHash.ToLowerInvariant() : fileHash.ToUpperInvariant();
         return fileHash;
     }

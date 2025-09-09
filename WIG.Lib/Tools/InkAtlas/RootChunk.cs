@@ -40,7 +40,7 @@ internal class RootChunk
 
     [JsonProperty("texture")]
     public Texture Texture { get; set; } = new()
-        { DepotPath = new DepotPath { Storage = "string", Value = "" }, Flags = "Default" };
+    { DepotPath = new DepotPath { Storage = "string", Value = "" }, Flags = "Default" };
 
     [JsonProperty("textureResolution")] public string TextureResolution { get; set; } = "UltraHD_3840_2160";
 }
