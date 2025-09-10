@@ -24,7 +24,7 @@ namespace WIG.Lib.Models;
 /// <summary>
 /// Represents an Icon that was created by the user or extracted from an imported <c>.archive</c> file.
 /// </summary>
-public class WolvenIcon : INotifyPropertyChanged, ICloneable, IEquatable<WolvenIcon>
+public sealed class WolvenIcon : INotifyPropertyChanged, ICloneable, IEquatable<WolvenIcon>
 {
     private string? _archivePath = "\\path\\to\\archive\\file";
 
