@@ -1,5 +1,5 @@
 ﻿// RootChunk.cs : WIG.Lib
-// Copyright (C) 2024  Ethan Hann
+// Copyright (C) 2025  Ethan Hann
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ internal class RootChunk
 
     [JsonProperty("texture")]
     public Texture Texture { get; set; } = new()
-    { DepotPath = new DepotPath { Storage = "string", Value = "" }, Flags = "Default" };
+        { DepotPath = new DepotPath { Storage = "string", Value = "" }, Flags = "Default" };
 
     [JsonProperty("textureResolution")] public string TextureResolution { get; set; } = "UltraHD_3840_2160";
 }

@@ -1,5 +1,5 @@
 ﻿// WolvenIcon.cs : WIG.Lib
-// Copyright (C) 2024  Ethan Hann
+// Copyright (C) 2025  Ethan Hann
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.ComponentModel;
 using AetherUtils.Core.Logging;
 using Newtonsoft.Json;
-using System.ComponentModel;
 using WIG.Lib.Utility;
 
 namespace WIG.Lib.Models;
@@ -331,7 +331,7 @@ public sealed class WolvenIcon : INotifyPropertyChanged, ICloneable, IEquatable<
     /// <returns><c>true</c> if the icon is valid; <c>false</c> otherwise.</returns>
     public bool CheckIconValid()
     {
-        bool isValid = false;
+        var isValid = false;
 
         if (IsFromArchive)
         {

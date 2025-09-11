@@ -5,8 +5,8 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AssemblyVersion>1.0.47.0</AssemblyVersion>
-    <FileVersion>1.0.47.0</FileVersion>
+    <AssemblyVersion>1.0.48.0</AssemblyVersion>
+    <FileVersion>1.0.48.0</FileVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>WIG.Lib</PackageId>
     <Title>Wolven Icon Generator</Title>

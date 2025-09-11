@@ -1,5 +1,5 @@
 // IconManager.cs : WIG.Lib
-// Copyright (C) 2024  Ethan Hann
+// Copyright (C) 2025  Ethan Hann
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -334,45 +334,45 @@ public class IconManager : IDisposable
                 throw new InvalidOperationException("The image import directory is null.");
 
             Dictionary<string, string> outputDictionary = new();
-            Guid guid = Guid.NewGuid();
+            var guid = Guid.NewGuid();
 
             // Create the path that imported PNGs are stored
-            string importedPngsPath = Path.Combine(ImageImportDirectory, $"{atlasName}-{guid}");
+            var importedPngsPath = Path.Combine(ImageImportDirectory, $"{atlasName}-{guid}");
             if (overwrite && Directory.Exists(importedPngsPath))
                 Directory.Delete(importedPngsPath, true);
             Directory.CreateDirectory(importedPngsPath);
             outputDictionary["importedPngs"] = importedPngsPath;
 
             // Create the base path for the project
-            string projectBasePath = Path.Combine(ImportedWorkingDirectory, $"{atlasName}-{guid}");
+            var projectBasePath = Path.Combine(ImportedWorkingDirectory, $"{atlasName}-{guid}");
             if (overwrite && Directory.Exists(projectBasePath))
                 Directory.Delete(projectBasePath, true);
             Directory.CreateDirectory(projectBasePath);
             outputDictionary["projectBasePath"] = projectBasePath;
 
             // Create the base path for the REDEngine files
-            string archiveBasePath = Path.Combine(projectBasePath, "source", "archive");
+            var archiveBasePath = Path.Combine(projectBasePath, "source", "archive");
             if (overwrite && Directory.Exists(archiveBasePath))
                 Directory.Delete(archiveBasePath, true);
             Directory.CreateDirectory(archiveBasePath);
             outputDictionary["archiveBasePath"] = archiveBasePath;
 
             // Create the path to the REDEngine files
-            string redEngineFilesPath = Path.Combine(archiveBasePath, "base", "icon");
+            var redEngineFilesPath = Path.Combine(archiveBasePath, "base", "icon");
             if (overwrite && Directory.Exists(redEngineFilesPath))
                 Directory.Delete(redEngineFilesPath, true);
             Directory.CreateDirectory(redEngineFilesPath);
             outputDictionary["redEngineFilesPath"] = redEngineFilesPath;
 
             // Create the base path for the raw files
-            string rawFilesBasePath = Path.Combine(projectBasePath, "source", "raw");
+            var rawFilesBasePath = Path.Combine(projectBasePath, "source", "raw");
             if (overwrite && Directory.Exists(rawFilesBasePath))
                 Directory.Delete(rawFilesBasePath, true);
             Directory.CreateDirectory(rawFilesBasePath);
             outputDictionary["rawFilesBasePath"] = rawFilesBasePath;
 
             // Create the path to the raw (non-REDEngine) files
-            string rawFilesPath = Path.Combine(rawFilesBasePath, "base", "icon");
+            var rawFilesPath = Path.Combine(rawFilesBasePath, "base", "icon");
             if (overwrite && Directory.Exists(rawFilesPath))
                 Directory.Delete(rawFilesPath, true);
             Directory.CreateDirectory(rawFilesPath);
@@ -412,15 +412,15 @@ public class IconManager : IDisposable
             Dictionary<string, string> outputDictionary = new();
 
             // Create the path that exported PNGs are stored
-            Guid guid = Guid.NewGuid();
-            string exportedPngsPath = Path.Combine(ImageExportDirectory, $"{atlasName}-{guid}");
+            var guid = Guid.NewGuid();
+            var exportedPngsPath = Path.Combine(ImageExportDirectory, $"{atlasName}-{guid}");
             if (overwrite && Directory.Exists(exportedPngsPath))
                 Directory.Delete(exportedPngsPath, true);
             Directory.CreateDirectory(exportedPngsPath);
             outputDictionary["exportedPngs"] = exportedPngsPath;
 
             // Create the base path for the project
-            string projectBasePath = Path.Combine(ExtractedWorkingDirectory, $"{atlasName}-{guid}");
+            var projectBasePath = Path.Combine(ExtractedWorkingDirectory, $"{atlasName}-{guid}");
             if (overwrite && Directory.Exists(projectBasePath))
                 Directory.Delete(projectBasePath, true);
             Directory.CreateDirectory(projectBasePath);
@@ -456,7 +456,7 @@ public class IconManager : IDisposable
             if (WorkingDirectory == null || WolvenKitTempDirectory == null)
                 throw new InvalidOperationException("Working directory or WolvenKit temp directory is null.");
 
-            string zipFile = Path.Combine(WorkingDirectory, $"WolvenKit.Console-{WolvenKitVersion}.zip");
+            var zipFile = Path.Combine(WorkingDirectory, $"WolvenKit.Console-{WolvenKitVersion}.zip");
 
             if (File.Exists(zipFile))
             {
@@ -541,7 +541,7 @@ public class IconManager : IDisposable
             throw new InvalidOperationException("The icon manager has not been initialized.");
 
         _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        CancellationToken token = _cancellationTokenSource.Token;
+        var token = _cancellationTokenSource.Token;
 
         try
         {
@@ -632,7 +632,7 @@ public class IconManager : IDisposable
             token.ThrowIfCancellationRequested();
 
             // Create necessary directories
-            Dictionary<string, string> projectDirectories = CreateImportDirectories(atlasName, overwrite);
+            var projectDirectories = CreateImportDirectories(atlasName, overwrite);
             if (projectDirectories.Count == 0)
             {
                 OnIconImportStatus(new StatusEventArgs("The project directories could not be created.", true,
@@ -646,8 +646,8 @@ public class IconManager : IDisposable
             token.ThrowIfCancellationRequested();
 
             // Copy the image to the images folder for the project
-            string imageFileName = Path.GetFileName(imagePath);
-            string projectImagePath = Path.Combine(projectDirectories["importedPngs"], imageFileName);
+            var imageFileName = Path.GetFileName(imagePath);
+            var projectImagePath = Path.Combine(projectDirectories["importedPngs"], imageFileName);
             File.Copy(imagePath, projectImagePath, overwrite);
 
             _currentProgress += 10;
@@ -688,8 +688,8 @@ public class IconManager : IDisposable
                 projectDirectories["projectBasePath"], token, progress);
 
             // Rename the .archive file to the atlas name
-            string originalArchivePath = Path.Combine(projectDirectories["projectBasePath"], "archive.archive");
-            string newArchivePath = Path.Combine(projectDirectories["projectBasePath"], $"{atlasName}.archive");
+            var originalArchivePath = Path.Combine(projectDirectories["projectBasePath"], "archive.archive");
+            var newArchivePath = Path.Combine(projectDirectories["projectBasePath"], $"{atlasName}.archive");
             File.Move(originalArchivePath, newArchivePath, overwrite);
 
             _currentProgress += 10;
@@ -753,12 +753,12 @@ public class IconManager : IDisposable
                 throw new DirectoryNotFoundException($"The path does not exist: {redEngineFilesPath}");
 
             List<string> filesToDelete = [];
-            foreach (string file in Directory.GetFiles(rawFilesPath))
+            foreach (var file in Directory.GetFiles(rawFilesPath))
             {
-                string fileName = Path.GetFileName(file);
+                var fileName = Path.GetFileName(file);
                 if (!fileName.EndsWith(".inkatlas") && !fileName.EndsWith(".xbm")) continue;
 
-                string destFile = Path.Combine(redEngineFilesPath, fileName);
+                var destFile = Path.Combine(redEngineFilesPath, fileName);
                 File.Copy(file, destFile, true);
                 filesToDelete.Add(file);
             }
@@ -793,7 +793,7 @@ public class IconManager : IDisposable
             throw new InvalidOperationException("The icon manager has not been initialized.");
 
         _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        CancellationToken token = _cancellationTokenSource.Token;
+        var token = _cancellationTokenSource.Token;
 
         try
         {
@@ -870,10 +870,10 @@ public class IconManager : IDisposable
             progress?.Report(_currentProgress);
             token.ThrowIfCancellationRequested();
 
-            string atlasName = Path.GetFileNameWithoutExtension(archivePath);
+            var atlasName = Path.GetFileNameWithoutExtension(archivePath);
 
             // Create necessary directories
-            Dictionary<string, string> projectDirectories = CreateExportDirectories(atlasName, overwrite);
+            var projectDirectories = CreateExportDirectories(atlasName, overwrite);
             if (projectDirectories.Count == 0)
             {
                 OnIconExportStatus(new StatusEventArgs("The project directories could not be created.", true,
@@ -895,7 +895,7 @@ public class IconManager : IDisposable
             token.ThrowIfCancellationRequested();
 
             // Convert the XBM files to PNG
-            string[] xbmFiles = Directory.GetFiles(projectDirectories["projectBasePath"], "*.xbm",
+            var xbmFiles = Directory.GetFiles(projectDirectories["projectBasePath"], "*.xbm",
                 SearchOption.AllDirectories);
             if (xbmFiles.Length == 0)
             {
@@ -909,7 +909,7 @@ public class IconManager : IDisposable
             progress?.Report(_currentProgress);
             token.ThrowIfCancellationRequested();
 
-            foreach (string xbmFile in xbmFiles)
+            foreach (var xbmFile in xbmFiles)
             {
                 await _wolvenKitCli.ExportPngAsync(xbmFile, projectDirectories["exportedPngs"], token, progress);
                 _currentProgress += 5;
@@ -918,10 +918,10 @@ public class IconManager : IDisposable
             }
 
             // Get the PNG files from the exported folder
-            string[] pngFiles = Directory.GetFiles(projectDirectories["exportedPngs"], "*.png");
+            var pngFiles = Directory.GetFiles(projectDirectories["exportedPngs"], "*.png");
 
             // Rename the .archive file to the atlas name
-            string newArchivePath = Path.Combine(projectDirectories["projectBasePath"], $"{atlasName}.archive");
+            var newArchivePath = Path.Combine(projectDirectories["projectBasePath"], $"{atlasName}.archive");
             File.Copy(archivePath, newArchivePath, overwrite);
 
             _currentProgress += 10;
@@ -948,7 +948,7 @@ public class IconManager : IDisposable
             }
 
             // Get the InkAtlas path and part
-            (string inkAtlasPath, string inkAtlasPart) pathAndParts = await GetInkAtlasPathAndPartAsync(projectDirectories["projectBasePath"],
+            var pathAndParts = await GetInkAtlasPathAndPartAsync(projectDirectories["projectBasePath"],
                 xbmFiles.First(), token, progress);
 
             _currentProgress += 10;
@@ -996,13 +996,13 @@ public class IconManager : IDisposable
             if (!Directory.Exists(projectBasePath))
                 throw new DirectoryNotFoundException($"The path does not exist: {projectBasePath}");
 
-            string? inkAtlasFile = Directory.GetFiles(projectBasePath, "*.inkatlas", SearchOption.AllDirectories)
+            var inkAtlasFile = Directory.GetFiles(projectBasePath, "*.inkatlas", SearchOption.AllDirectories)
                 .FirstOrDefault();
 
             if (inkAtlasFile == null)
                 throw new FileNotFoundException("The .inkatlas file could not be found.", projectBasePath);
 
-            string inkAtlasPath = PathHelper.GetRelativePath(projectBasePath, inkAtlasFile);
+            var inkAtlasPath = PathHelper.GetRelativePath(projectBasePath, inkAtlasFile);
 
             if (inkAtlasPath == null)
                 throw new InvalidOperationException("The relative path could not be determined.");
@@ -1012,19 +1012,19 @@ public class IconManager : IDisposable
 
             await _wolvenKitCli.ConvertToInkAtlasJsonFileAsync(inkAtlasFile, token);
 
-            string? inkAtlasJsonFile = Directory.GetFiles(projectBasePath, "*.json", SearchOption.AllDirectories)
+            var inkAtlasJsonFile = Directory.GetFiles(projectBasePath, "*.json", SearchOption.AllDirectories)
                 .FirstOrDefault();
             if (inkAtlasJsonFile == null)
                 throw new FileNotFoundException("The .inkatlas.json file could not be found.", projectBasePath);
 
-            InkAtlasData? atlasData = _inkAtlasSerializer.LoadJson(inkAtlasJsonFile);
+            var atlasData = _inkAtlasSerializer.LoadJson(inkAtlasJsonFile);
             if (atlasData == null)
                 throw new InvalidOperationException("The .inkatlas.json file could not be loaded.");
 
-            string expectedPathInJson = PathHelper.GetRelativePath(projectBasePath, xbmFile);
+            var expectedPathInJson = PathHelper.GetRelativePath(projectBasePath, xbmFile);
 
             //The part name is the first part which has a texture with the expected path
-            string partName = atlasData.Data.RootChunk.Slots.Elements
+            var partName = atlasData.Data.RootChunk.Slots.Elements
                 .First(e => e.Texture.DepotPath.Value.Equals(expectedPathInJson)).Parts.First().PartName.Value;
 
             //The path to the .inkatlas file should match the expected path of the .xbm file in the .inkatlas.json file but with the .inkatlas file name
@@ -1071,10 +1071,8 @@ public class IconManager : IDisposable
         try
         {
             if (string.IsNullOrEmpty(WolvenKitTempDirectory))
-            {
                 AuLogger.GetCurrentLogger<IconManager>("CopyOodleDllToWolvenKitPath")
                     .Error("Wolven Kit Temp Directory could not be determined.");
-            }
             if (!File.Exists(pathToOodleDll))
             {
                 AuLogger.GetCurrentLogger<IconManager>("CopyOodleDllToWolvenKitPath")

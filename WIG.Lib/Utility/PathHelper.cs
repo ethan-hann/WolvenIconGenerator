@@ -1,5 +1,5 @@
 ﻿// PathHelper.cs : WIG.Lib
-// Copyright (C) 2024  Ethan Hann
+// Copyright (C) 2025  Ethan Hann
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,13 +38,13 @@ public class PathHelper
     public static async Task DownloadFileAsync(string fileUrl, string destinationFilePath)
     {
         using HttpClient client = new();
-        using HttpResponseMessage response = await client.GetAsync(fileUrl, HttpCompletionOption.ResponseHeadersRead);
+        using var response = await client.GetAsync(fileUrl, HttpCompletionOption.ResponseHeadersRead);
         response.EnsureSuccessStatusCode();
 
-        await using Stream contentStream = await response.Content.ReadAsStreamAsync();
+        await using var contentStream = await response.Content.ReadAsStreamAsync();
         FileStream fileStream = new(destinationFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192,
             true);
-        await using System.Runtime.CompilerServices.ConfiguredAsyncDisposable stream = fileStream.ConfigureAwait(false);
+        await using var stream = fileStream.ConfigureAwait(false);
 
         await contentStream.CopyToAsync(fileStream);
     }
@@ -60,11 +60,11 @@ public class PathHelper
             return ConvertToBitmap(null);
 
         using HttpClient client = new();
-        using HttpResponseMessage response = await client.GetAsync(imageUrl, HttpCompletionOption.ResponseHeadersRead);
+        using var response = await client.GetAsync(imageUrl, HttpCompletionOption.ResponseHeadersRead);
         response.EnsureSuccessStatusCode();
 
-        await using Stream contentStream = await response.Content.ReadAsStreamAsync();
-        Image<Rgba32> image = await Image.LoadAsync<Rgba32>(contentStream);
+        await using var contentStream = await response.Content.ReadAsStreamAsync();
+        var image = await Image.LoadAsync<Rgba32>(contentStream);
         return ConvertToBitmap(image);
     }
 
@@ -109,14 +109,14 @@ public class PathHelper
 
         await Task.Run(() =>
         {
-            using ZipArchive archive = ZipArchive.Open(zipFilePath);
-            foreach (ZipArchiveEntry? entry in archive.Entries.Where(entry => !entry.IsDirectory))
+            using var archive = ZipArchive.Open(zipFilePath);
+            foreach (var entry in archive.Entries.Where(entry => !entry.IsDirectory))
             {
-                string? entryKey = entry.Key;
+                var entryKey = entry.Key;
                 if (string.IsNullOrEmpty(entryKey)) continue;
 
-                string destinationPath = Path.Combine(destinationDirectory, entryKey);
-                string? destinationDir = Path.GetDirectoryName(destinationPath);
+                var destinationPath = Path.Combine(destinationDirectory, entryKey);
+                var destinationDir = Path.GetDirectoryName(destinationPath);
 
                 if (string.IsNullOrEmpty(destinationDir)) continue;
 
@@ -144,7 +144,7 @@ public class PathHelper
             Uri fullUri = new(fullPath);
 
             // Get relative Uri
-            Uri relativeUri = baseUri.MakeRelativeUri(fullUri);
+            var relativeUri = baseUri.MakeRelativeUri(fullUri);
 
             // Convert to string and replace forward slashes with backslashes
             return Uri.UnescapeDataString(relativeUri.ToString()).Replace('/', '\\');

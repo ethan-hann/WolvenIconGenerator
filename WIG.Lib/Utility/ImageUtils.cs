@@ -1,5 +1,5 @@
 ﻿// ImageUtils.cs : WIG.Lib
-// Copyright (C) 2024  Ethan Hann
+// Copyright (C) 2025  Ethan Hann
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-using AetherUtils.Core.Logging;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using AetherUtils.Core.Logging;
 
 namespace WIG.Lib.Utility;
 
@@ -43,7 +43,7 @@ public sealed class ImageUtils
             using FileStream stream = new(file, FileMode.Open, FileAccess.Read, FileShare.Read);
 
             // Load image from stream and create a copy to release file lock
-            Image? originalImage = stream.Length == 0 ? null : Image.FromStream(stream);
+            var originalImage = stream.Length == 0 ? null : Image.FromStream(stream);
             if (originalImage == null) return null;
 
             // Optional down sampling to fit within max dimensions
@@ -69,16 +69,16 @@ public sealed class ImageUtils
     public static Bitmap DownsampleImage(Image original, int maxWidth, int maxHeight)
     {
         // Calculate the scaling factor
-        float ratioX = (float)maxWidth / original.Width;
-        float ratioY = (float)maxHeight / original.Height;
-        float ratio = Math.Min(ratioX, ratioY);
+        var ratioX = (float)maxWidth / original.Width;
+        var ratioY = (float)maxHeight / original.Height;
+        var ratio = Math.Min(ratioX, ratioY);
 
         // Calculate the new width and height based on the ratio
-        int newWidth = (int)(original.Width * ratio);
-        int newHeight = (int)(original.Height * ratio);
+        var newWidth = (int)(original.Width * ratio);
+        var newHeight = (int)(original.Height * ratio);
 
         Bitmap resizedImage = new(newWidth, newHeight);
-        using (Graphics g = Graphics.FromImage(resizedImage))
+        using (var g = Graphics.FromImage(resizedImage))
         {
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
             g.DrawImage(original, 0, 0, newWidth, newHeight);
@@ -95,14 +95,14 @@ public sealed class ImageUtils
     private static Bitmap OptimizeImageForMemory(Image original)
     {
         // Check if the original image has an alpha channel (supports transparency)
-        PixelFormat pixelFormat = original.PixelFormat == PixelFormat.Format32bppArgb
+        var pixelFormat = original.PixelFormat == PixelFormat.Format32bppArgb
                           || original.PixelFormat == PixelFormat.Format32bppPArgb
                           || original.PixelFormat == PixelFormat.Format32bppRgb
             ? PixelFormat.Format32bppArgb
             : PixelFormat.Format24bppRgb; // Fallback to 24bpp if no transparency
 
         Bitmap optimizedBitmap = new(original.Width, original.Height, pixelFormat);
-        using (Graphics g = Graphics.FromImage(optimizedBitmap))
+        using (var g = Graphics.FromImage(optimizedBitmap))
         {
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
             g.DrawImage(original, new Rectangle(0, 0, original.Width, original.Height));

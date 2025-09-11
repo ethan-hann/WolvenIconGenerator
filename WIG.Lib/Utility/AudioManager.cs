@@ -1,27 +1,25 @@
-﻿// // AudioManager.cs : WolvenIconGenerator
-// // Copyright (C) 2025  Ethan Hann
-// //
-// // This program is free software: you can redistribute it and/or modify
-// // it under the terms of the GNU General Public License as published by
-// // the Free Software Foundation, either version 3 of the License, or
-// // (at your option) any later version.
-// //
-// // This program is distributed in the hope that it will be useful,
-// // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// // GNU General Public License for more details.
-// //
-// // You should have received a copy of the GNU General Public License
-// // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+﻿// AudioManager.cs : WIG.Lib
+// Copyright (C) 2025  Ethan Hann
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #region
 
 using AetherUtils.Core.Files;
 using AetherUtils.Core.Logging;
-using WIG.Lib.Models;
 using WIG.Lib.Models.Audio;
 using WIG.Lib.Services;
-using WIG.Lib.Tools.InkAtlas;
 
 #endregion
 
@@ -42,6 +40,9 @@ public class AudioManager : IDisposable
     private CancellationTokenSource? _cancellationTokenSource;
 
     private int _currentProgress;
+
+    private Cli? _wolvenKitCli;
+    private string _wolvenKitCliExe = string.Empty;
 
     private AudioManager()
     {
@@ -73,6 +74,9 @@ public class AudioManager : IDisposable
         }
     }
 
+    /// <summary>
+    /// Clean up resources used by the AudioManager.
+    /// </summary>
     public void Dispose()
     {
         GC.SuppressFinalize(this);
@@ -105,8 +109,8 @@ public class AudioManager : IDisposable
         try
         {
             //Make sure the audio manager was initialized. It should have been initialized before this and contains the WolvenKit files.
-            if (!AudioManager.Instance.IsInitialized)
-                throw new InvalidOperationException("AudioManager must be initialized before AudioManager.");
+            if (!IconManager.Instance.IsInitialized)
+                throw new InvalidOperationException("IconManager must be initialized before AudioManager.");
 
             SetupRequiredPaths();
 
@@ -115,11 +119,26 @@ public class AudioManager : IDisposable
 
             // Fetch and save the vanilla stations JSON file
             var jsonOutputPath = Path.Combine(WorkingDirectory, "vanillaStations.json");
-            var fetcher = new FetchVanillaStations(RadioStationsSheetURL, jsonOutputPath);
+            var fetcher = new FetchVanillaStations(RadioStationsSheetUrl, jsonOutputPath);
 
             VanillaStations = await fetcher.FetchAndSaveAsync();
 
-            IsInitialized = VanillaStations.Count != 0;
+            if (WolvenKitTempDirectory == null)
+                throw new InvalidOperationException("The WolvenKit temp directory is null.");
+
+            // Setup WolvenKit CLI
+            _wolvenKitCliExe = Path.Combine(WolvenKitTempDirectory, "WolvenKit.CLI.exe");
+
+            if (!File.Exists(_wolvenKitCliExe))
+                throw new FileNotFoundException("The WolvenKit CLI executable could not be found.", _wolvenKitCliExe);
+
+            _wolvenKitCli = new Cli(_wolvenKitCliExe, _cancellationTokenSource!.Token);
+
+            //Subscribe to events
+            _wolvenKitCli.OutputChanged += (_, output) => OnCliProgressChanged(output);
+            _wolvenKitCli.ErrorChanged += (_, error) => OnCliErrorOccurred(error);
+
+            IsInitialized = VanillaStations.Count != 0 && _wolvenKitCli != null;
         }
         catch (Exception ex)
         {
@@ -132,15 +151,15 @@ public class AudioManager : IDisposable
         try
         {
             WorkingDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "Wolven audio Generator", "tools", "audio");
+                "Wolven Icon Generator", "tools", "audio");
             AudioImportDirectory = Path.Combine(WorkingDirectory, "imported");
             ImportedWorkingDirectory = Path.Combine(WorkingDirectory, "imported_working_directory");
-            WolvenKitTempDirectory = AudioManager.Instance.WolvenKitTempDirectory;
+            WolvenKitTempDirectory = IconManager.Instance.WolvenKitTempDirectory;
 
             Directory.CreateDirectory(WorkingDirectory);
             Directory.CreateDirectory(AudioImportDirectory);
             Directory.CreateDirectory(ImportedWorkingDirectory);
-            //No need to create WolvenKitTempDirectory, AudioManager should have already created it.
+            //No need to create WolvenKitTempDirectory, IconManager should have already created it.
 
             AuLogger.GetCurrentLogger<AudioManager>("SetupRequiredPaths").Info($"WorkingDirectory: {WorkingDirectory}");
         }
@@ -218,7 +237,7 @@ public class AudioManager : IDisposable
             Dictionary<string, string> outputDictionary = new();
             var guid = Guid.NewGuid();
 
-            // Create the path that imported PNGs are stored
+            // Create the path that imported audio files are stored
             var importedAudioPath = Path.Combine(AudioImportDirectory, $"{stationName}-{guid}");
             if (overwrite && Directory.Exists(importedAudioPath))
                 Directory.Delete(importedAudioPath, true);
@@ -232,7 +251,7 @@ public class AudioManager : IDisposable
             Directory.CreateDirectory(projectBasePath);
             outputDictionary["projectBasePath"] = projectBasePath;
 
-            // Create the base path for the REDEngine files
+            // Create the base path for the REDEngine archive files
             var archiveBasePath = Path.Combine(projectBasePath, "source", "archive");
             if (overwrite && Directory.Exists(archiveBasePath))
                 Directory.Delete(archiveBasePath, true);
@@ -252,7 +271,8 @@ public class AudioManager : IDisposable
     }
 
     /// <summary>
-    /// Asynchronously generates a <c>.archive</c> file from a list of audio files.
+    /// Asynchronously generates an <c>.archive</c> file from a list of audio files and a vanilla station name.
+    /// Renames the audio files to match the WEM IDs from the vanilla station that the list of <see cref="ReplacementTrack"/>s are replacing.
     /// This method supports progress reporting and task cancellation.
     /// </summary>
     /// <param name="vanillaStationName">The original, vanilla station to retrieve filenames from.</param>
@@ -260,7 +280,7 @@ public class AudioManager : IDisposable
     /// <param name="progress">An optional progress reporter to track the progress of the operation.</param>
     /// <param name="overwrite">Indicates whether existing directories should be overwritten if they exist.</param>
     /// <param name="cancellationToken">The cancellation token for stopping the task.</param>
-    /// <returns>A task that, when complete, returns a <see cref="WolvenIcon"/> or <c>null</c> if the operation is canceled or fails.</returns>
+    /// <returns>A task that, when complete, returns a <see cref="WolvenAudio"/> or <c>null</c> if the operation is canceled or fails.</returns>
     /// <exception cref="InvalidOperationException">Occurs when the audio manager has not been initialized.</exception>
     public async Task<WolvenAudio?> GenerateAudioArchiveAsync(string vanillaStationName, List<ReplacementTrack> files,
         IProgress<int>? progress = null, bool overwrite = true, CancellationToken cancellationToken = default)
@@ -270,13 +290,14 @@ public class AudioManager : IDisposable
             throw new InvalidOperationException("The audio manager has not been initialized.");
 
         _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        CancellationToken token = _cancellationTokenSource.Token;
+        var token = _cancellationTokenSource.Token;
 
         try
         {
-            AuLogger.GetCurrentLogger<AudioManager>("GenerateIconImageAsync")
+            AuLogger.GetCurrentLogger<AudioManager>("GenerateAudioArchiveAsync")
                 .Info($"The audio import operation has started: {vanillaStationName}");
-            OnAudioImportStarted(new StatusEventArgs($"The audio import operation has started: {vanillaStationName}", false,
+            OnAudioImportStarted(new StatusEventArgs($"The audio import operation has started: {vanillaStationName}",
+                false,
                 _currentProgress));
 
             WolvenAudio? audio = null;
@@ -284,29 +305,31 @@ public class AudioManager : IDisposable
             // Task.Run allows async cancellation support inside the method
             await Task.Run(async () =>
             {
-                audio = await CreateAudioArchiveAsync(imagePath, vanillaStationName, overwrite, token, progress);
+                audio = await CreateAudioArchiveAsync(vanillaStationName, files, overwrite, token, progress);
                 if (audio == null)
-                    throw new InvalidOperationException("The audio could not be created.");
+                    throw new InvalidOperationException("The audio archive could not be created.");
             }, token);
 
-            AuLogger.GetCurrentLogger<AudioManager>("GenerateIconImageAsync")
-                .Info($"The audio import operation has completed successfully: {audio?.vanillaStationName}");
-            OnIconImportFinished(new StatusEventArgs(
-                $"The audio import operation has completed successfully: {audio?.vanillaStationName}", false, _currentProgress));
+            AuLogger.GetCurrentLogger<AudioManager>("GenerateAudioArchiveAsync")
+                .Info($"The audio import operation has completed successfully: {audio?.VanillaStation?.StationName}");
+            OnAudioImportFinished(new StatusEventArgs(
+                $"The audio import operation has completed successfully: {audio?.VanillaStation?.StationName}", false,
+                _currentProgress));
 
             return audio;
         }
         catch (OperationCanceledException)
         {
-            AuLogger.GetCurrentLogger<AudioManager>("GenerateIconImageAsync")
+            AuLogger.GetCurrentLogger<AudioManager>("GenerateAudioArchiveAsync")
                 .Info($"The audio import operation was cancelled: {vanillaStationName}");
-            OnIconImportStatus(new StatusEventArgs($"The audio import operation was cancelled: {vanillaStationName}", false,
+            OnAudioImportStatus(new StatusEventArgs($"The audio import operation was cancelled: {vanillaStationName}",
+                false,
                 _currentProgress));
         }
         catch (Exception e)
         {
-            AuLogger.GetCurrentLogger<AudioManager>("GenerateIconImageAsync").Error(e, e.Message);
-            OnIconImportStatus(new StatusEventArgs(e.Message, true, _currentProgress));
+            AuLogger.GetCurrentLogger<AudioManager>("GenerateAudioArchiveAsync").Error(e, e.Message);
+            OnAudioImportStatus(new StatusEventArgs(e.Message, true, _currentProgress));
         }
         finally
         {
@@ -319,16 +342,17 @@ public class AudioManager : IDisposable
     }
 
     /// <summary>
-    /// Asynchronously creates a <see cref="WolvenIcon"/> object from the specified image path and atlas name.
+    /// Asynchronously creates a <see cref="WolvenAudio"/> object from the specified vanilla station name and list of replacement tracks.
     /// This method supports cancellation and progress reporting.
     /// </summary>
-    /// <param name="vanillaStationName">The path to the PNG file to create the audio from.</param>
-    /// <param name="files">The name for the atlas. Must be lowercase.</param>
+    /// <param name="vanillaStationName">The name of the vanilla station we are replacing.</param>
+    /// <param name="files">A list of <see cref="ReplacementTrack"/> that specify the tracks to replace in the vanilla station.</param>
     /// <param name="overwrite">Indicates whether existing files should be overwritten.</param>
     /// <param name="token">The token used for cancelling operations.</param>
     /// <param name="progress">An optional progress reporter for reporting progress.</param>
-    /// <returns>A task containing the resulting <see cref="WolvenIcon"/>.</returns>
-    private async Task<WolvenIcon> CreateAudioArchiveAsync(string vanillaStationName, List<ReplacementTrack> files, bool overwrite,
+    /// <returns>A task containing the resulting <see cref="WolvenAudio"/>.</returns>
+    private async Task<WolvenAudio> CreateAudioArchiveAsync(string vanillaStationName, List<ReplacementTrack> files,
+        bool overwrite,
         CancellationToken token, IProgress<int>? progress)
     {
         try
@@ -341,9 +365,10 @@ public class AudioManager : IDisposable
             //Check files exist in the replacement tracks list
             foreach (var file in files.Where(file => !FileHelper.DoesFileExist(file.ReplacementFilePath)))
             {
-                OnAudioImportStarted(new StatusEventArgs($"The audio file could not be found: {file.ReplacementFilePath}", true, _currentProgress));
+                OnAudioImportStarted(new StatusEventArgs(
+                    $"The audio file could not be found: {file.ReplacementFilePath}", true, _currentProgress));
                 CancelOperation();
-                throw new FileNotFoundException("The image file could not be found.", file.ReplacementFilePath);
+                throw new FileNotFoundException("The audio file could not be found.", file.ReplacementFilePath);
             }
 
             _currentProgress += 10;
@@ -376,32 +401,22 @@ public class AudioManager : IDisposable
             progress?.Report(_currentProgress);
             token.ThrowIfCancellationRequested();
 
-            // Use InkAtlasGenerator to generate the .inkatlas.json and images
-            await _inkAtlasGenerator!.GenerateInkAtlasJsonAsync(projectDirectories["importedPngs"],
-                projectDirectories["rawFilesPath"], atlasName, token, progress);
-
-            _currentProgress += 10;
-            progress?.Report(_currentProgress);
-            token.ThrowIfCancellationRequested();
-
-            // Convert to InkAtlas file
-            await _wolvenKitCli!.ConvertToInkAtlasFileAsync(projectDirectories["rawFilesPath"], token, progress);
+            // Copy the audio files to the Redengine project folder structure, renaming them to match the associated WEM Ids
+            foreach (var file in files)
+            {
+                var trackFileName = $"{file.WemId}.wem";
+                var audioPath = Path.Combine(projectDirectories["archiveBasePath"], trackFileName);
+                File.Copy(file.ReplacementFilePath, audioPath, overwrite);
+            }
 
             _currentProgress += 10;
             progress?.Report(_currentProgress);
             token.ThrowIfCancellationRequested();
 
             // Import to WolvenKit project
-            await _wolvenKitCli.ImportToWolvenKitProjectAsync(projectDirectories["rawFilesPath"], token, progress);
+            await _wolvenKitCli!.ImportToWolvenKitProjectAsync(projectDirectories["archiveBasePath"], token, progress);
 
-            _currentProgress += 10;
-            progress?.Report(_currentProgress);
-            token.ThrowIfCancellationRequested();
-
-            // Copy project files
-            CopyProjectFiles(projectDirectories["rawFilesPath"], projectDirectories["redEngineFilesPath"]);
-
-            _currentProgress += 10;
+            _currentProgress += 20;
             progress?.Report(_currentProgress);
             token.ThrowIfCancellationRequested();
 
@@ -409,9 +424,9 @@ public class AudioManager : IDisposable
             await _wolvenKitCli.PackArchiveAsync(projectDirectories["archiveBasePath"],
                 projectDirectories["projectBasePath"], token, progress);
 
-            // Rename the .archive file to the atlas name
-            string originalArchivePath = Path.Combine(projectDirectories["projectBasePath"], "archive.archive");
-            string newArchivePath = Path.Combine(projectDirectories["projectBasePath"], $"{atlasName}.archive");
+            // Rename the .archive file to the station name
+            var originalArchivePath = Path.Combine(projectDirectories["projectBasePath"], "archive.archive");
+            var newArchivePath = Path.Combine(projectDirectories["projectBasePath"], $"{vanillaStationName}.archive");
             File.Move(originalArchivePath, newArchivePath, overwrite);
 
             _currentProgress += 10;
@@ -421,7 +436,7 @@ public class AudioManager : IDisposable
             // Verify the new archive exists
             if (!File.Exists(newArchivePath))
             {
-                OnIconImportStatus(new StatusEventArgs("The final .archive file could not be renamed.", true,
+                OnAudioImportStatus(new StatusEventArgs("The final .archive file could not be renamed.", true,
                     _currentProgress));
                 CancelOperation();
                 throw new FileNotFoundException("The final .archive file could not be renamed.", newArchivePath);
@@ -434,18 +449,12 @@ public class AudioManager : IDisposable
             // Delete the original archive
             File.Delete(originalArchivePath);
 
-            // Create and return the WolvenIcon object
-            WolvenIcon audio = new(projectImagePath)
+            //Create and return the WolvenAudio object
+            var audio = new WolvenAudio(vanillaStationName, newArchivePath, files)
             {
-                CustomIcon =
-                {
-                    InkAtlasPath = Path.Combine("base", "audio", $"{atlasName}.inkatlas"),
-                    InkAtlasPart = "icon_part"
-                },
-                AtlasName = atlasName,
-                OriginalArchivePath = newArchivePath,
+                OriginalArchivePath = originalArchivePath,
                 Sha256HashOfArchiveFile = HashUtils.ComputeSha256Hash(newArchivePath, true),
-                IconId = Guid.Parse(projectDirectories["iconGuid"])
+                AudioId = Guid.Parse(projectDirectories["replacedStationGuid"])
             };
 
             _currentProgress = 100;
@@ -454,7 +463,7 @@ public class AudioManager : IDisposable
         }
         catch (Exception e)
         {
-            AuLogger.GetCurrentLogger<IconManager>("CreateAudioArchiveAsync").Error(e, e.Message);
+            AuLogger.GetCurrentLogger<AudioManager>("CreateAudioArchiveAsync").Error(e, e.Message);
             throw;
         }
     }
@@ -468,6 +477,14 @@ public class AudioManager : IDisposable
     {
         return VanillaStations.FirstOrDefault(s =>
             string.Equals(s.StationName, stationName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Resets the current progress percentage to 0.
+    /// </summary>
+    private void ResetProgress()
+    {
+        _currentProgress = 0;
     }
 
     /// <summary>
@@ -488,7 +505,7 @@ public class AudioManager : IDisposable
 
     /// <summary>
     ///     Gets the temporary directory for the WolvenKit files. Set to the same directory as
-    ///     <see cref="AudioManager.WolvenKitTempDirectory" />.
+    ///     <see cref="IconManager.WolvenKitTempDirectory" />.
     /// </summary>
     public string? WolvenKitTempDirectory { get; private set; }
 
@@ -508,7 +525,7 @@ public class AudioManager : IDisposable
     /// <summary>
     ///     The URL to the Google Sheets document containing the vanilla radio station data.
     /// </summary>
-    public string RadioStationsSheetURL { get; } =
+    public static string RadioStationsSheetUrl =>
         "https://docs.google.com/spreadsheets/d/1N9f2i7cBvU4LNDBu57JqFOj1kqWIHX7HKS-BYIZiCKk/edit?gid=1338899553#gid=1338899553";
 
     /// <summary>

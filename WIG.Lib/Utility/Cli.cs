@@ -1,5 +1,5 @@
 ﻿// Cli.cs : WIG.Lib
-// Copyright (C) 2024  Ethan Hann
+// Copyright (C) 2025  Ethan Hann
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-using AetherUtils.Core.Logging;
 using System.Diagnostics;
+using AetherUtils.Core.Logging;
 
 namespace WIG.Lib.Utility;
 
@@ -24,8 +24,8 @@ namespace WIG.Lib.Utility;
 /// </summary>
 internal class Cli
 {
-    private readonly string _executablePath;
     private readonly CancellationToken _cancellationToken;
+    private readonly string _executablePath;
 
     public Cli(string executablePath, CancellationToken cancellationToken)
     {
@@ -47,7 +47,7 @@ internal class Cli
     /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task GenerateInkAtlasJsonAsync(string iconFolderPath, string outputFolderPath, string atlasName)
     {
-        string arguments = $"\"{iconFolderPath}\" \"{outputFolderPath}\" \"{atlasName}\"";
+        var arguments = $"\"{iconFolderPath}\" \"{outputFolderPath}\" \"{atlasName}\"";
         await ExecuteCommandAsync(arguments, _cancellationToken);
     }
 
@@ -82,10 +82,10 @@ internal class Cli
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
 
-            Task processTask = Task.Run(async () =>
+            var processTask = Task.Run(async () =>
             {
                 // Process the output and report progress periodically
-                int lastProgress = 0;
+                var lastProgress = 0;
                 while (!process.HasExited)
                 {
                     // Assume the process is making progress in increments
@@ -142,7 +142,7 @@ internal class Cli
     public async Task ConvertToInkAtlasFileAsync(string inkAtlasJsonPath, CancellationToken token,
         IProgress<int>? progress = null)
     {
-        string arguments = $"convert deserialize \"{inkAtlasJsonPath}\"";
+        var arguments = $"convert deserialize \"{inkAtlasJsonPath}\"";
         await ExecuteCommandAsync(arguments, token, progress);
     }
 
@@ -156,7 +156,7 @@ internal class Cli
     public async Task ConvertToInkAtlasJsonFileAsync(string inkAtlasPath, CancellationToken token,
         IProgress<int>? progress = null)
     {
-        string arguments = $"convert serialize \"{inkAtlasPath}\"";
+        var arguments = $"convert serialize \"{inkAtlasPath}\"";
         await ExecuteCommandAsync(arguments, token, progress);
     }
 
@@ -170,7 +170,7 @@ internal class Cli
     public async Task ImportToWolvenKitProjectAsync(string sourcePath, CancellationToken token,
         IProgress<int>? progress = null)
     {
-        string arguments = $"import -p \"{sourcePath}\"";
+        var arguments = $"import -p \"{sourcePath}\"";
         await ExecuteCommandAsync(arguments, token, progress);
     }
 
@@ -185,7 +185,7 @@ internal class Cli
     public async Task PackArchiveAsync(string modPath, string outputFolder, CancellationToken token,
         IProgress<int>? progress = null)
     {
-        string arguments = $"pack -p \"{modPath}\" -o \"{outputFolder}\"";
+        var arguments = $"pack -p \"{modPath}\" -o \"{outputFolder}\"";
         await ExecuteCommandAsync(arguments, token, progress);
     }
 
@@ -200,7 +200,7 @@ internal class Cli
     public async Task UnpackArchiveAsync(string archivePath, string outputFolder, CancellationToken token,
         IProgress<int>? progress = null)
     {
-        string arguments = $"unbundle -p \"{archivePath}\" -o \"{outputFolder}\"";
+        var arguments = $"unbundle -p \"{archivePath}\" -o \"{outputFolder}\"";
         await ExecuteCommandAsync(arguments, token, progress);
     }
 
@@ -215,7 +215,7 @@ internal class Cli
     public async Task ExportPngAsync(string modPath, string outputFolder, CancellationToken token,
         IProgress<int>? progress = null)
     {
-        string arguments = $"export --uext png -p \"{modPath}\" -o \"{outputFolder}\"";
+        var arguments = $"export --uext png -p \"{modPath}\" -o \"{outputFolder}\"";
         await ExecuteCommandAsync(arguments, token, progress);
     }
 

@@ -1,5 +1,5 @@
 ﻿// HashUtils.cs : WIG.Lib
-// Copyright (C) 2024  Ethan Hann
+// Copyright (C) 2025  Ethan Hann
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,11 +32,11 @@ public static class HashUtils
     public static string ComputeSha256Hash(string file, bool useLowerInvariant)
     {
         // Calculate the hash of the icon file
-        using SHA256 sha256 = SHA256.Create();
-        using FileStream fileStream = File.OpenRead(file);
+        using var sha256 = SHA256.Create();
+        using var fileStream = File.OpenRead(file);
 
-        byte[] hashBytes = sha256.ComputeHash(fileStream);
-        string fileHash = BitConverter.ToString(hashBytes).Replace("-", "");
+        var hashBytes = sha256.ComputeHash(fileStream);
+        var fileHash = BitConverter.ToString(hashBytes).Replace("-", "");
         fileHash = useLowerInvariant ? fileHash.ToLowerInvariant() : fileHash.ToUpperInvariant();
         return fileHash;
     }

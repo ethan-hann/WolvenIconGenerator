@@ -1,5 +1,5 @@
 ﻿// AssemblyExtensions.cs : WIG.Lib
-// Copyright (C) 2024  Ethan Hann
+// Copyright (C) 2025  Ethan Hann
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,8 +31,8 @@ public static class AssemblyExtensions
     /// <returns>A string representing the resource or <see cref="string.Empty"/> if the resource could not be found.</returns>
     public static string ExtractEmbeddedResource(this Assembly assembly, string resourceName)
     {
-        string tempPath = Path.Combine(Path.GetTempPath(), resourceName);
-        using Stream? resource = assembly.GetManifestResourceStream(resourceName);
+        var tempPath = Path.Combine(Path.GetTempPath(), resourceName);
+        using var resource = assembly.GetManifestResourceStream(resourceName);
         if (resource == null) return string.Empty;
 
         using FileStream file = new(tempPath, FileMode.Create, FileAccess.Write);
