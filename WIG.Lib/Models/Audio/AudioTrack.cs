@@ -25,8 +25,26 @@ namespace WIG.Lib.Models.Audio;
 /// <param name="wemIds">A set of WEM filename ids, as strings.</param>
 public class AudioTrack(string trackName, string trackArtist, List<float> trackDurations, HashSet<string> wemIds)
 {
+    /// <summary>
+    /// The track's artist.
+    /// </summary>
     public readonly string TrackArtist = trackArtist;
+
+    /// <summary>
+    /// Represents the list of track durations, in seconds, for the associated collection.
+    /// </summary>
     public readonly List<float> TrackDuration = trackDurations;
+
+    /// <summary>
+    /// Gets the name of the track associated with this instance.
+    /// </summary>
     public readonly string TrackName = trackName;
+
+    /// <summary>
+    /// Gets the collection of WEM identifiers associated with this instance.
+    /// </summary>
     public readonly HashSet<string> WemIds = wemIds;
+
+    /// <inheritdoc/>
+    public override string ToString() => TrackName;
 }

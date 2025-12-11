@@ -198,6 +198,10 @@ public class AudioManager : IDisposable
         AudioImportFinished?.Invoke(this, e);
     }
 
+    /// <summary>
+    /// Releases unmanaged resources and performs cleanup operations before the AudioManager object is reclaimed by
+    /// garbage collection.
+    /// </summary>
     ~AudioManager()
     {
         CleanupResources();

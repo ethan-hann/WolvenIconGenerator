@@ -43,4 +43,7 @@ public class VanillaStation(string stationName, List<AudioTrack> tracks)
     /// </summary>
     [JsonProperty("tracks")]
     public List<AudioTrack> Tracks { get; set; } = tracks;
+
+    /// <inheritdoc />
+    public override string ToString() => StationName;
 }
