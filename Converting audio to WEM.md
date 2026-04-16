@@ -25,3 +25,24 @@ The workflow for CRA and WolvenAudio is this:
 1) User adds a file to replace a radio station's track.
    1) If the file is not already in `.wav` format, we will need to convert it first using the built-in converting feature already present in CRA.
 2) Once we have a converted `.wav` file, we need to run the `sound2wem.cmd` script, substituting paths at runtime to match the user's installations.
+
+## Additional Considerations
+It may be possible to host a simplified version of Wwise with just the files needed to do the command line conversion. I have found that I can copy both the `Data` and `x64` files into a different place on my computer, point the script to the new location for `WwiseConsole.exe` and it will still convert fine.
+
+To do this, we can create a *fake* install in WIG's tools directory: `%appdata%\Wolven Icon Generator\tools\audio` with this directory layout:
+
+```sh
+|%appdata%\Wolven Icon Generator\tools\audio
+|--wav2wem
+|----Authoring
+|------Data
+|------x64
+|--------Release
+|----------bin
+```
+
+Upon downloading the files, we can then copy them to these folders and delete the downloaded zip. Subsequent runs of the app will not need to re-downloaded Wwise. We'll check for the files prescense on startup and skip downloading if `WwiseConsole.exe` exists within.
+
+The only two folders we need to keep from the `Data` directory are `Schemas` and `WObjects`. Narrowed this down via testing.
+
+For the `bin` folder, we need to keep the `Plugins` folder, `WwiseConsole.exe` and ALL `*.dll` files. I tried to narrow down just the DLL files needed by the command-line tool, however, I wasn't able to narrow it to only a few files.
