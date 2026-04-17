@@ -85,7 +85,7 @@ public sealed class WolvenAudio : INotifyPropertyChanged, ICloneable, IEquatable
     }
 
     /// <summary>
-    /// The unique id for this icon.
+    /// The unique id for this audio asset.
     /// </summary>
     [JsonProperty("audioId")]
     public Guid? AudioId
@@ -99,7 +99,7 @@ public sealed class WolvenAudio : INotifyPropertyChanged, ICloneable, IEquatable
     }
 
     /// <summary>
-    /// The path to the archive file that the game uses to load the icon from.
+    /// The path to the archive file that the game uses to load the audio from.
     /// </summary>
     [JsonProperty("archivePath")]
     public string? ArchivePath
@@ -113,7 +113,7 @@ public sealed class WolvenAudio : INotifyPropertyChanged, ICloneable, IEquatable
     }
 
     /// <summary>
-    /// The SHA256 hash of the archive file that the game uses to load the icon from.
+    /// The SHA256 hash of the archive file that the game uses to load the audio from.
     /// </summary>
     [JsonProperty("sha256HashOfArchiveFile")]
     public string? Sha256HashOfArchiveFile
@@ -127,7 +127,7 @@ public sealed class WolvenAudio : INotifyPropertyChanged, ICloneable, IEquatable
     }
 
     /// <summary>
-    /// The name of the icon. Does not have to be unique.
+    /// The name of the vanilla station in game that is being updated/replaced.
     /// </summary>
     [JsonProperty("vanillaStationName")]
     public string? VanillaStationName
@@ -141,7 +141,7 @@ public sealed class WolvenAudio : INotifyPropertyChanged, ICloneable, IEquatable
     }
 
     /// <summary>
-    /// The associated <see cref="VanillaStation"/> that this WolvenAudio replaces.
+    /// The associated <see cref="VanillaStation"/> object that this WolvenAudio replaces.
     /// </summary>
     [JsonProperty("vanillaStation")]
     public VanillaStation? VanillaStation

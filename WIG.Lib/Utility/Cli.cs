@@ -26,11 +26,13 @@ internal class Cli
 {
     private readonly CancellationToken _cancellationToken;
     private readonly string _executablePath;
+    private readonly string? _workingDirectory;
 
-    public Cli(string executablePath, CancellationToken cancellationToken)
+    public Cli(string executablePath, CancellationToken cancellationToken, string? workingDirectory = null)
     {
         _executablePath = executablePath;
         _cancellationToken = cancellationToken;
+        _workingDirectory = workingDirectory;
     }
 
     public event EventHandler<string?>? OutputChanged;
@@ -50,6 +52,36 @@ internal class Cli
         var arguments = $"\"{iconFolderPath}\" \"{outputFolderPath}\" \"{atlasName}\"";
         await ExecuteCommandAsync(arguments, _cancellationToken);
     }
+    #endregion
+
+    #region Wav2Wem
+    
+    /// <summary>
+    /// Convert a folder of <c>.wav</c> files to <c>.wem</c> using the sound2wem command script.
+    /// </summary>
+    /// <param name="ffmpegPath">The full path to <c>ffmpeg.exe</c>.</param>
+    /// <param name="wwiseConsolePath">The full path to <c>WwiseConsole.exe</c>.</param>
+    /// <param name="outputFolderPath">The folder where converted <c>.wem</c> files should be written.</param>
+    /// <param name="inputFolderPath">The folder containing source <c>.wav</c> files.</param>
+    /// <param name="token">A cancellation token for task cancellation.</param>
+    /// <param name="progress">Progress reporter to track the operation's progress.</param>
+    /// <param name="conversionProfile">The Wwise conversion profile. Defaults to <c>Vorbis Quality High</c>.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    public async Task ConvertWavToWemAsync(string ffmpegPath, string wwiseConsolePath, string outputFolderPath,
+        string inputFolderPath, CancellationToken token, IProgress<int>? progress = null,
+        string conversionProfile = "Vorbis Quality High")
+    {
+        var arguments = new List<string>
+        {
+            $"--ffmpeg:{ffmpegPath}",
+            $"--wwise:{wwiseConsolePath}",
+            $"--conversion:{conversionProfile}",
+            $"--out:{outputFolderPath}",
+            inputFolderPath
+        };
+
+        await ExecuteCommandAsync(arguments, token, progress);
+    }
 
     #endregion
 
@@ -64,16 +96,14 @@ internal class Cli
     {
         try
         {
-            ProcessStartInfo processInfo = new(_executablePath, arguments)
-            {
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
+            var processInfo = CreateProcessStartInfo(arguments);
+            if (!string.IsNullOrWhiteSpace(_workingDirectory))
+                processInfo.WorkingDirectory = _workingDirectory;
 
-            using Process process = new();
-            process.StartInfo = processInfo;
+            AuLogger.GetCurrentLogger<Cli>("ExecuteCommand")
+                .Info($"Starting process: {processInfo.FileName} {processInfo.Arguments}");
+
+            using Process process = new() { StartInfo = processInfo };
 
             process.OutputDataReceived += (_, e) => OnOutputChanged(e.Data);
             process.ErrorDataReceived += (_, e) => OnErrorChanged(e.Data);
@@ -84,32 +114,86 @@ internal class Cli
 
             var processTask = Task.Run(async () =>
             {
-                // Process the output and report progress periodically
                 var lastProgress = 0;
                 while (!process.HasExited)
                 {
-                    // Assume the process is making progress in increments
                     lastProgress += 5;
                     progress?.Report(lastProgress);
 
-                    if (_cancellationToken.IsCancellationRequested)
+                    if (token.IsCancellationRequested)
                     {
-                        process.Kill();
-                        _cancellationToken.ThrowIfCancellationRequested();
+                        process.Kill(true);
+                        token.ThrowIfCancellationRequested();
                     }
 
-                    await Task.Delay(250); // Simulate progress updates
+                    await Task.Delay(250, token);
                 }
 
-                await process.WaitForExitAsync();
-            });
+                await process.WaitForExitAsync(token);
+            }, token);
+
             await processTask;
+
+            if (process.ExitCode != 0)
+                throw new InvalidOperationException(
+                    $"Process '{_executablePath}' failed with exit code {process.ExitCode}.");
+        }
+        catch (OperationCanceledException)
+        {
+            OnErrorChanged("The operation was canceled.");
+            throw;
         }
         catch (Exception ex)
         {
             OnErrorChanged(ex.Message);
             AuLogger.GetCurrentLogger<Cli>("ExecuteCommand").Error(ex);
+            throw;
         }
+    }
+
+    private async Task ExecuteCommandAsync(IReadOnlyList<string> arguments, CancellationToken token,
+        IProgress<int>? progress = null)
+    {
+        var escapedArguments = string.Join(" ", arguments.Select(QuoteForCommandLine));
+        await ExecuteCommandAsync(escapedArguments, token, progress);
+    }
+
+    private ProcessStartInfo CreateProcessStartInfo(string arguments)
+    {
+        if (Path.GetExtension(_executablePath).Equals(".cmd", StringComparison.OrdinalIgnoreCase) ||
+            Path.GetExtension(_executablePath).Equals(".bat", StringComparison.OrdinalIgnoreCase))
+        {
+            var scriptToRun = !string.IsNullOrWhiteSpace(_workingDirectory)
+                ? Path.GetFileName(_executablePath)
+                : _executablePath;
+
+            var command = string.IsNullOrWhiteSpace(arguments)
+                ? QuoteForCommandLine(scriptToRun)
+                : $"{QuoteForCommandLine(scriptToRun)} {arguments}";
+
+            return new ProcessStartInfo("cmd.exe", $"/d /s /c \"{command}\"")
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+        }
+
+        return new ProcessStartInfo(_executablePath, arguments)
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+    }
+
+    private static string QuoteForCommandLine(string argument)
+    {
+        return string.IsNullOrWhiteSpace(argument)
+            ? "\"\""
+            : $"\"{argument.Replace("\"", "\"\"")}\"";
     }
 
     private void OnOutputChanged(string? output)

@@ -44,6 +44,16 @@ public class AudioManager : IDisposable
     private Cli? _wolvenKitCli;
     private string _wolvenKitCliExe = string.Empty;
 
+    private Cli? _wwiseCli;
+    private string _sound2WemScriptPath = string.Empty;
+    private string _ffmpegExe = string.Empty;
+    private string _wwiseCliExe = string.Empty;
+
+    private bool _isSound2WemDownloaded;
+    private bool _isSound2WemExtracted;
+    private bool _isWwiseDownloaded;
+    private bool _isWwiseExtracted;
+
     private AudioManager()
     {
         try
@@ -134,11 +144,38 @@ public class AudioManager : IDisposable
 
             _wolvenKitCli = new Cli(_wolvenKitCliExe, _cancellationTokenSource!.Token);
 
+            await DownloadAudioToolsIfRequiredAsync();
+
+            if (Sound2WemDirectory == null)
+                throw new InvalidOperationException("The sound2wem directory is null.");
+
+            if (WwiseToolsDirectory == null)
+                throw new InvalidOperationException("The Wwise tools directory is null.");
+
+            _sound2WemScriptPath = ResolveSound2WemScriptPath();
+
+            _wwiseCliExe = ResolveWwiseConsolePath();
+
+            _ffmpegExe = ResolveFfmpegPath();
+
+            if (!File.Exists(_sound2WemScriptPath))
+                throw new FileNotFoundException("The sound2wem script could not be found.", _sound2WemScriptPath);
+
+            if (!File.Exists(_wwiseCliExe))
+                throw new FileNotFoundException("The WwiseConsole executable could not be found.", _wwiseCliExe);
+
+            if (string.IsNullOrWhiteSpace(_ffmpegExe) || !File.Exists(_ffmpegExe))
+                throw new FileNotFoundException("The FFmpeg executable could not be found.", _ffmpegExe);
+
+            _wwiseCli = new Cli(_sound2WemScriptPath, _cancellationTokenSource.Token, Sound2WemDirectory);
+
             //Subscribe to events
             _wolvenKitCli.OutputChanged += (_, output) => OnCliProgressChanged(output);
             _wolvenKitCli.ErrorChanged += (_, error) => OnCliErrorOccurred(error);
+            _wwiseCli.OutputChanged += (_, output) => OnCliProgressChanged(output);
+            _wwiseCli.ErrorChanged += (_, error) => OnCliErrorOccurred(error);
 
-            IsInitialized = VanillaStations.Count != 0 && _wolvenKitCli != null;
+            IsInitialized = VanillaStations.Count != 0 && _wolvenKitCli != null && _wwiseCli != null;
         }
         catch (Exception ex)
         {
@@ -154,11 +191,17 @@ public class AudioManager : IDisposable
                 "Wolven Icon Generator", "tools", "audio");
             AudioImportDirectory = Path.Combine(WorkingDirectory, "imported");
             ImportedWorkingDirectory = Path.Combine(WorkingDirectory, "imported_working_directory");
+            Sound2WemDirectory = Path.Combine(WorkingDirectory, "sound2wem");
+            WwiseToolsDirectory = Path.Combine(WorkingDirectory, "wwise");
+            FfmpegDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "RadioExt-Helper", "ffmpeg");
             WolvenKitTempDirectory = IconManager.Instance.WolvenKitTempDirectory;
 
             Directory.CreateDirectory(WorkingDirectory);
             Directory.CreateDirectory(AudioImportDirectory);
             Directory.CreateDirectory(ImportedWorkingDirectory);
+            Directory.CreateDirectory(Sound2WemDirectory);
+            Directory.CreateDirectory(WwiseToolsDirectory);
             //No need to create WolvenKitTempDirectory, IconManager should have already created it.
 
             AuLogger.GetCurrentLogger<AudioManager>("SetupRequiredPaths").Info($"WorkingDirectory: {WorkingDirectory}");
@@ -168,6 +211,203 @@ public class AudioManager : IDisposable
             AuLogger.GetCurrentLogger<AudioManager>("SetupRequiredPaths").Error(ex);
         }
     }
+
+    #region Audio Tool Downloads
+
+    private async Task DownloadAudioToolsIfRequiredAsync()
+    {
+        await DownloadSound2WemIfRequiredAsync();
+        await DownloadWwiseIfRequiredAsync();
+    }
+
+    private async Task DownloadSound2WemIfRequiredAsync()
+    {
+        if (Sound2WemDirectory == null || WorkingDirectory == null)
+            throw new InvalidOperationException("The sound2wem or working directory is null.");
+
+        if (File.Exists(Path.Combine(Sound2WemDirectory, "zSound2wem.cmd")) ||
+            File.Exists(Path.Combine(Sound2WemDirectory, "sound2wem.cmd")))
+        {
+            _isSound2WemDownloaded = true;
+            _isSound2WemExtracted = true;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Sound2WemDownloadUrl))
+            throw new InvalidOperationException("The sound2wem download URL is null or empty.");
+
+        var zipFile = Path.Combine(WorkingDirectory, "sound2wem.zip");
+        await PathHelper.DownloadFileAsync(Sound2WemDownloadUrl, zipFile);
+        _isSound2WemDownloaded = File.Exists(zipFile);
+
+        if (!_isSound2WemDownloaded)
+            throw new InvalidOperationException("The sound2wem files could not be downloaded.");
+
+        var tempExtractPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        Directory.CreateDirectory(tempExtractPath);
+
+        try
+        {
+            await PathHelper.ExtractZipFileAsync(zipFile, tempExtractPath);
+
+            var extractedRoot = GetExtractedRootDirectory(tempExtractPath);
+            CopyDirectoryContents(extractedRoot, Sound2WemDirectory, true);
+
+            _isSound2WemExtracted =
+                File.Exists(Path.Combine(Sound2WemDirectory, "zSound2wem.cmd")) ||
+                File.Exists(Path.Combine(Sound2WemDirectory, "sound2wem.cmd"));
+
+            if (!_isSound2WemExtracted)
+                throw new FileNotFoundException("The sound2wem script file could not be extracted.");
+        }
+        finally
+        {
+            if (Directory.Exists(tempExtractPath))
+                Directory.Delete(tempExtractPath, true);
+        }
+    }
+
+    private async Task DownloadWwiseIfRequiredAsync()
+    {
+        if (WwiseToolsDirectory == null || WorkingDirectory == null)
+            throw new InvalidOperationException("The Wwise tools or working directory is null.");
+
+        var existingWwisePath = ResolveWwiseConsolePath(false);
+        if (!string.IsNullOrWhiteSpace(existingWwisePath) && File.Exists(existingWwisePath))
+        {
+            _isWwiseDownloaded = true;
+            _isWwiseExtracted = true;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(WwiseDownloadUrl))
+            throw new InvalidOperationException("The Wwise download URL is null or empty.");
+
+        var zipFile = Path.Combine(WorkingDirectory, "wwise.zip");
+        await PathHelper.DownloadFileAsync(WwiseDownloadUrl, zipFile);
+        _isWwiseDownloaded = File.Exists(zipFile);
+
+        if (!_isWwiseDownloaded)
+            throw new InvalidOperationException("The Wwise tools could not be downloaded.");
+
+        var tempExtractPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        Directory.CreateDirectory(tempExtractPath);
+
+        try
+        {
+            await PathHelper.ExtractZipFileAsync(zipFile, tempExtractPath);
+
+            var extractedRoot = GetExtractedRootDirectory(tempExtractPath);
+            CopyDirectoryContents(extractedRoot, WwiseToolsDirectory, true);
+
+            _isWwiseExtracted = !string.IsNullOrWhiteSpace(ResolveWwiseConsolePath(false));
+            if (!_isWwiseExtracted)
+                throw new FileNotFoundException("WwiseConsole.exe could not be found after extraction.");
+        }
+        finally
+        {
+            if (Directory.Exists(tempExtractPath))
+                Directory.Delete(tempExtractPath, true);
+        }
+    }
+
+    private string ResolveSound2WemScriptPath()
+    {
+        if (!string.IsNullOrWhiteSpace(Sound2WemScriptPath))
+            return Sound2WemScriptPath;
+
+        if (Sound2WemDirectory == null)
+            return string.Empty;
+
+        var zScript = Path.Combine(Sound2WemDirectory, "zSound2wem.cmd");
+        if (File.Exists(zScript))
+            return zScript;
+
+        var script = Path.Combine(Sound2WemDirectory, "sound2wem.cmd");
+        return File.Exists(script) ? script : zScript;
+    }
+
+    private string ResolveWwiseConsolePath(bool useConfiguredPath = true)
+    {
+        if (useConfiguredPath && !string.IsNullOrWhiteSpace(WwiseConsoleExecutablePath))
+            return WwiseConsoleExecutablePath;
+
+        if (WwiseToolsDirectory == null)
+            return string.Empty;
+
+        var candidates = new[]
+        {
+            Path.Combine(WwiseToolsDirectory, "Authoring", "x64", "Release", "bin", "WwiseConsole.exe"),
+            Path.Combine(WwiseToolsDirectory, "x64", "Release", "bin", "WwiseConsole.exe")
+        };
+
+        return candidates.FirstOrDefault(File.Exists) ?? candidates[0];
+    }
+
+    private string ResolveFfmpegPath()
+    {
+        if (!string.IsNullOrWhiteSpace(FfmpegExecutablePath))
+        {
+            if (File.Exists(FfmpegExecutablePath))
+                return FfmpegExecutablePath;
+
+            if (Directory.Exists(FfmpegExecutablePath))
+            {
+                var configuredCandidates = new[]
+                {
+                    Path.Combine(FfmpegExecutablePath, "ffmpeg.exe"),
+                    Path.Combine(FfmpegExecutablePath, "bin", "ffmpeg.exe")
+                };
+
+                var configuredCandidate = configuredCandidates.FirstOrDefault(File.Exists);
+                if (!string.IsNullOrWhiteSpace(configuredCandidate))
+                    return configuredCandidate;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(FfmpegDirectory) || !Directory.Exists(FfmpegDirectory))
+            return FfmpegExecutablePath;
+
+        var candidates = new[]
+        {
+            Path.Combine(FfmpegDirectory, "ffmpeg.exe"),
+            Path.Combine(FfmpegDirectory, "bin", "ffmpeg.exe")
+        };
+
+        var candidate = candidates.FirstOrDefault(File.Exists);
+        if (!string.IsNullOrWhiteSpace(candidate))
+            return candidate;
+
+        var discovered = Directory.EnumerateFiles(FfmpegDirectory, "ffmpeg.exe", SearchOption.AllDirectories)
+            .FirstOrDefault();
+
+        return discovered ?? FfmpegExecutablePath;
+    }
+
+    private static string GetExtractedRootDirectory(string extractedDirectory)
+    {
+        var directories = Directory.GetDirectories(extractedDirectory);
+        return directories.Length == 1 ? directories[0] : extractedDirectory;
+    }
+
+    private static void CopyDirectoryContents(string sourceDirectory, string destinationDirectory, bool overwrite)
+    {
+        Directory.CreateDirectory(destinationDirectory);
+
+        foreach (var file in Directory.GetFiles(sourceDirectory))
+        {
+            var destinationFilePath = Path.Combine(destinationDirectory, Path.GetFileName(file));
+            File.Copy(file, destinationFilePath, overwrite);
+        }
+
+        foreach (var directory in Directory.GetDirectories(sourceDirectory))
+        {
+            var destinationPath = Path.Combine(destinationDirectory, Path.GetFileName(directory));
+            CopyDirectoryContents(directory, destinationPath, overwrite);
+        }
+    }
+
+    #endregion
 
     private void OnCliErrorOccurred(string? error)
     {
@@ -396,36 +636,45 @@ public class AudioManager : IDisposable
             // Copy the audio files to the audio folder for the project
             foreach (var file in files)
             {
-                var trackFileName = Path.GetFileName(file.ReplacementFilePath);
-                var projectImagePath = Path.Combine(projectDirectories["importedAudio"], trackFileName);
-                File.Copy(file.ReplacementFilePath, projectImagePath, overwrite);
+                if (!Path.GetExtension(file.ReplacementFilePath).Equals(".wav", StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException(
+                        $"Only .wav files are supported for WEM conversion. Invalid file: {file.ReplacementFilePath}");
+
+                var stagedWavPath = Path.Combine(projectDirectories["importedAudio"], $"{file.WemId}.wav");
+                File.Copy(file.ReplacementFilePath, stagedWavPath, overwrite);
             }
 
             _currentProgress += 10;
             progress?.Report(_currentProgress);
             token.ThrowIfCancellationRequested();
 
-            // Copy the audio files to the Redengine project folder structure, renaming them to match the associated WEM Ids
+            // Convert staged WAV files into WEM files directly in source/archive.
+            await _wwiseCli!.ConvertWavToWemAsync(_ffmpegExe, _wwiseCliExe,
+                projectDirectories["archiveBasePath"], projectDirectories["importedAudio"], token,
+                progress, WwiseConversionProfile);
+
+            _currentProgress += 10;
+            progress?.Report(_currentProgress);
+            token.ThrowIfCancellationRequested();
+
+            // Ensure converted WEM files exist in source/archive.
             foreach (var file in files)
             {
-                var trackFileName = $"{file.WemId}.wem";
-                var audioPath = Path.Combine(projectDirectories["archiveBasePath"], trackFileName);
-                File.Copy(file.ReplacementFilePath, audioPath, overwrite);
+                var convertedWemPath = Path.Combine(projectDirectories["archiveBasePath"], $"{file.WemId}.wem");
+                if (!File.Exists(convertedWemPath))
+                    throw new FileNotFoundException("The converted WEM file could not be found.", convertedWemPath);
             }
 
             _currentProgress += 10;
             progress?.Report(_currentProgress);
             token.ThrowIfCancellationRequested();
-
-            // Import to WolvenKit project
-            await _wolvenKitCli!.ImportToWolvenKitProjectAsync(projectDirectories["archiveBasePath"], token, progress);
 
             _currentProgress += 20;
             progress?.Report(_currentProgress);
             token.ThrowIfCancellationRequested();
 
             // Pack the project into a .archive file
-            await _wolvenKitCli.PackArchiveAsync(projectDirectories["archiveBasePath"],
+            await _wolvenKitCli!.PackArchiveAsync(projectDirectories["archiveBasePath"],
                 projectDirectories["projectBasePath"], token, progress);
 
             // Rename the .archive file to the station name
@@ -508,10 +757,57 @@ public class AudioManager : IDisposable
     public string? WorkingDirectory { get; private set; }
 
     /// <summary>
+    /// Gets the directory path that stores <c>sound2wem</c> files. Defaults to <c>%APPDATA%\Wolven Icon Generator\tools\audio\sound2wem</c>.
+    /// </summary>
+    public string? Sound2WemDirectory { get; private set; }
+
+    /// <summary>
+    /// Gets the directory path that stores Wwise authoring tools. Defaults to <c>%APPDATA%\Wolven Icon Generator\tools\audio\wwise</c>.
+    /// </summary>
+    public string? WwiseToolsDirectory { get; private set; }
+
+    /// <summary>
     ///     Gets the temporary directory for the WolvenKit files. Set to the same directory as
     ///     <see cref="IconManager.WolvenKitTempDirectory" />.
     /// </summary>
     public string? WolvenKitTempDirectory { get; private set; }
+
+    /// <summary>
+    /// Gets or sets the path to the FFmpeg executable used for WAV to WEM conversion.
+    /// You may also provide a directory path and the executable will be resolved from it.
+    /// </summary>
+    public string FfmpegExecutablePath { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets the default FFmpeg install directory from RadioExt-Helper.
+    /// </summary>
+    public string? FfmpegDirectory { get; private set; }
+
+    /// <summary>
+    /// Gets or sets the download URL for the Wwise authoring tools archive.
+    /// </summary>
+    public string WwiseDownloadUrl { get; set; } = "https://tortal.xyz/TEx4C";
+
+    /// <summary>
+    /// Gets or sets the download URL for the sound2wem archive.
+    /// </summary>
+    public string Sound2WemDownloadUrl { get; set; } =
+        "https://github.com/EternalLeo/sound2wem/archive/refs/heads/master.zip";
+
+    /// <summary>
+    /// Gets or sets the path to the sound2wem script.
+    /// </summary>
+    public string? Sound2WemScriptPath { get; set; }
+
+    /// <summary>
+    /// Gets or sets the path to the WwiseConsole executable.
+    /// </summary>
+    public string? WwiseConsoleExecutablePath { get; set; }
+
+    /// <summary>
+    /// Gets or sets the Wwise conversion profile passed to sound2wem.
+    /// </summary>
+    public string WwiseConversionProfile { get; set; } = "Vorbis Quality High";
 
     /// <summary>
     ///     Gets the path to the audio import directory. Defaults to <c>%LOCALAPPDATA%\RadioExt-Helper\tools\audio\imported</c>

@@ -109,7 +109,7 @@ public class PathHelper
 
         await Task.Run(() =>
         {
-            using var archive = ZipArchive.Open(zipFilePath);
+            using var archive = ZipArchive.OpenArchive(zipFilePath);
             foreach (var entry in archive.Entries.Where(entry => !entry.IsDirectory))
             {
                 var entryKey = entry.Key;
