@@ -58,7 +58,12 @@ jobs:
       - name: Push to NuGet
         if: steps.version.outputs.publish == 'true'
         shell: pwsh
-        run: dotnet nuget push "artifacts/*.nupkg" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+        # dotnet nuget push doesn't expand the wildcard on Windows runners. It pushes the matching .snupkg alongside each .nupkg.
+        run: |
+          foreach ($package in Get-ChildItem artifacts -Filter *.nupkg) {
+            dotnet nuget push $package.FullName --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
 
       - name: Create GitHub release
         if: steps.version.outputs.publish == 'true'
