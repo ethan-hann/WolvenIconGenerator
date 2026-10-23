@@ -1,5 +1,5 @@
 ﻿// AssemblyExtensions.cs : WIG.Lib
-// Copyright (C) 2024  Ethan Hann
+// Copyright (C) 2025  Ethan Hann
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ public static class AssemblyExtensions
         using var resource = assembly.GetManifestResourceStream(resourceName);
         if (resource == null) return string.Empty;
 
-        using var file = new FileStream(tempPath, FileMode.Create, FileAccess.Write);
+        using FileStream file = new(tempPath, FileMode.Create, FileAccess.Write);
         resource?.CopyTo(file);
 
         return tempPath;

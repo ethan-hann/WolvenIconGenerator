@@ -29,14 +29,14 @@ public partial class CustomPictureBox : PictureBox
     {
         try
         {
-            var data = e.Data;
+            IDataObject? data = e.Data;
             if (data == null || !data.GetDataPresent(DataFormats.FileDrop)) return;
 
-            var files = data.GetData(DataFormats.FileDrop) as string[];
+            string[]? files = data.GetData(DataFormats.FileDrop) as string[];
             if (!(files?.Length > 0)) return;
 
-            var file = files[0];
-            var image = ImageUtils.LoadAndOptimizeImage(file);
+            string file = files[0];
+            Image? image = ImageUtils.LoadAndOptimizeImage(file);
             if (image == null) return;
 
             Image = image;

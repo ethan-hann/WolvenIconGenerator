@@ -1,5 +1,5 @@
 ﻿// PathHelper.cs : WIG.Lib
-// Copyright (C) 2024  Ethan Hann
+// Copyright (C) 2025  Ethan Hann
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,12 +37,12 @@ public class PathHelper
     /// <returns>A task that represents the current async operation.</returns>
     public static async Task DownloadFileAsync(string fileUrl, string destinationFilePath)
     {
-        using var client = new HttpClient();
+        using HttpClient client = new();
         using var response = await client.GetAsync(fileUrl, HttpCompletionOption.ResponseHeadersRead);
         response.EnsureSuccessStatusCode();
 
         await using var contentStream = await response.Content.ReadAsStreamAsync();
-        var fileStream = new FileStream(destinationFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192,
+        FileStream fileStream = new(destinationFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192,
             true);
         await using var stream = fileStream.ConfigureAwait(false);
 
@@ -59,7 +59,7 @@ public class PathHelper
         if (string.IsNullOrWhiteSpace(imageUrl))
             return ConvertToBitmap(null);
 
-        using var client = new HttpClient();
+        using HttpClient client = new();
         using var response = await client.GetAsync(imageUrl, HttpCompletionOption.ResponseHeadersRead);
         response.EnsureSuccessStatusCode();
 
@@ -78,7 +78,7 @@ public class PathHelper
     {
         try
         {
-            using var memoryStream = new MemoryStream();
+            using MemoryStream memoryStream = new();
 
             image.SaveAsBmp(memoryStream);
             memoryStream.Seek(0, SeekOrigin.Begin);
@@ -109,22 +109,20 @@ public class PathHelper
 
         await Task.Run(() =>
         {
-            using (var archive = ZipArchive.Open(zipFilePath))
+            using var archive = ZipArchive.OpenArchive(zipFilePath);
+            foreach (var entry in archive.Entries.Where(entry => !entry.IsDirectory))
             {
-                foreach (var entry in archive.Entries.Where(entry => !entry.IsDirectory))
-                {
-                    var entryKey = entry.Key;
-                    if (string.IsNullOrEmpty(entryKey)) continue;
+                var entryKey = entry.Key;
+                if (string.IsNullOrEmpty(entryKey)) continue;
 
-                    var destinationPath = Path.Combine(destinationDirectory, entryKey);
-                    var destinationDir = Path.GetDirectoryName(destinationPath);
+                var destinationPath = Path.Combine(destinationDirectory, entryKey);
+                var destinationDir = Path.GetDirectoryName(destinationPath);
 
-                    if (string.IsNullOrEmpty(destinationDir)) continue;
+                if (string.IsNullOrEmpty(destinationDir)) continue;
 
-                    Directory.CreateDirectory(destinationDir);
-                    entry.WriteToFile(destinationPath,
-                        new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
-                }
+                Directory.CreateDirectory(destinationDir);
+                entry.WriteToFile(destinationPath,
+                    new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
             }
         });
     }
@@ -142,8 +140,8 @@ public class PathHelper
             // Ensure the base path ends with a directory separator
             if (!basePath.EndsWith(Path.DirectorySeparatorChar.ToString())) basePath += Path.DirectorySeparatorChar;
 
-            var baseUri = new Uri(basePath);
-            var fullUri = new Uri(fullPath);
+            Uri baseUri = new(basePath);
+            Uri fullUri = new(fullPath);
 
             // Get relative Uri
             var relativeUri = baseUri.MakeRelativeUri(fullUri);

@@ -1,5 +1,5 @@
 ﻿// ImageUtils.cs : WIG.Lib
-// Copyright (C) 2024  Ethan Hann
+// Copyright (C) 2025  Ethan Hann
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ public sealed class ImageUtils
             if (!IsPngFile(file))
                 return null;
 
-            using var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using FileStream stream = new(file, FileMode.Open, FileAccess.Read, FileShare.Read);
 
             // Load image from stream and create a copy to release file lock
             var originalImage = stream.Length == 0 ? null : Image.FromStream(stream);
@@ -77,7 +77,7 @@ public sealed class ImageUtils
         var newWidth = (int)(original.Width * ratio);
         var newHeight = (int)(original.Height * ratio);
 
-        var resizedImage = new Bitmap(newWidth, newHeight);
+        Bitmap resizedImage = new(newWidth, newHeight);
         using (var g = Graphics.FromImage(resizedImage))
         {
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
@@ -101,7 +101,7 @@ public sealed class ImageUtils
             ? PixelFormat.Format32bppArgb
             : PixelFormat.Format24bppRgb; // Fallback to 24bpp if no transparency
 
-        var optimizedBitmap = new Bitmap(original.Width, original.Height, pixelFormat);
+        Bitmap optimizedBitmap = new(original.Width, original.Height, pixelFormat);
         using (var g = Graphics.FromImage(optimizedBitmap))
         {
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;

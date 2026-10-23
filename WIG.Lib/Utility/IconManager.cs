@@ -1,5 +1,5 @@
 // IconManager.cs : WIG.Lib
-// Copyright (C) 2024  Ethan Hann
+// Copyright (C) 2025  Ethan Hann
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -117,6 +117,7 @@ public class IconManager : IDisposable
         try
         {
             _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource?.Dispose();
             if (Directory.Exists(WolvenKitTempDirectory))
                 Directory.Delete(WolvenKitTempDirectory, true);
         }
@@ -156,7 +157,7 @@ public class IconManager : IDisposable
             // Subscribe to CLI events
             _wolvenKitCli.OutputChanged += (sender, output) => OnCliProgressChanged(output);
             _wolvenKitCli.ErrorChanged += (sender, error) => OnCliErrorOccurred(error);
-            
+
             IsInitialized = true;
         }
         catch (Exception e)
@@ -244,7 +245,7 @@ public class IconManager : IDisposable
     /// Occurs whenever the icon import has started.
     /// </summary>
     public event EventHandler<StatusEventArgs>? IconImportStarted;
-    
+
     /// <summary>
     /// Occurs whenever the icon import has finished.
     /// </summary>
@@ -258,7 +259,7 @@ public class IconManager : IDisposable
     /// Occurs whenever the icon extraction has started.
     /// </summary>
     public event EventHandler<StatusEventArgs>? IconExportStarted;
-    
+
     /// <summary>
     /// Occurs whenever the icon extraction has finished.
     /// </summary>
@@ -332,7 +333,7 @@ public class IconManager : IDisposable
             if (ImageImportDirectory == null)
                 throw new InvalidOperationException("The image import directory is null.");
 
-            var outputDictionary = new Dictionary<string, string>();
+            Dictionary<string, string> outputDictionary = new();
             var guid = Guid.NewGuid();
 
             // Create the path that imported PNGs are stored
@@ -408,7 +409,7 @@ public class IconManager : IDisposable
             if (ImageExportDirectory == null)
                 throw new InvalidOperationException("The image export directory is null.");
 
-            var outputDictionary = new Dictionary<string, string>();
+            Dictionary<string, string> outputDictionary = new();
 
             // Create the path that exported PNGs are stored
             var guid = Guid.NewGuid();
@@ -712,7 +713,7 @@ public class IconManager : IDisposable
             File.Delete(originalArchivePath);
 
             // Create and return the WolvenIcon object
-            var icon = new WolvenIcon(projectImagePath)
+            WolvenIcon icon = new(projectImagePath)
             {
                 CustomIcon =
                 {
@@ -963,7 +964,7 @@ public class IconManager : IDisposable
             }
 
             // Create and return the WolvenIcon object
-            var icon = new WolvenIcon(pngFiles.First(), newArchivePath)
+            WolvenIcon icon = new(pngFiles.First(), newArchivePath)
             {
                 CustomIcon =
                 {
@@ -1008,7 +1009,7 @@ public class IconManager : IDisposable
 
             if (_wolvenKitCli == null)
                 throw new InvalidOperationException("The Wolven Kit Cli path could not be determined.");
-            
+
             await _wolvenKitCli.ConvertToInkAtlasJsonFileAsync(inkAtlasFile, token);
 
             var inkAtlasJsonFile = Directory.GetFiles(projectBasePath, "*.json", SearchOption.AllDirectories)
@@ -1070,18 +1071,16 @@ public class IconManager : IDisposable
         try
         {
             if (string.IsNullOrEmpty(WolvenKitTempDirectory))
-            {
                 AuLogger.GetCurrentLogger<IconManager>("CopyOodleDllToWolvenKitPath")
                     .Error("Wolven Kit Temp Directory could not be determined.");
-            }
             if (!File.Exists(pathToOodleDll))
             {
                 AuLogger.GetCurrentLogger<IconManager>("CopyOodleDllToWolvenKitPath")
                     .Error($"The path does not exist: {pathToOodleDll}");
                 return;
             }
-            
-            File.Copy(pathToOodleDll, 
+
+            File.Copy(pathToOodleDll,
                 Path.Combine(WolvenKitTempDirectory, Path.GetFileName(pathToOodleDll)), true);
         }
         catch (Exception ex)

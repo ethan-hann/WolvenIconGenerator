@@ -15,7 +15,7 @@ namespace WolvenIconGenerator
             ApplicationConfiguration.Initialize();
 
             // Show the splash screen as a modal dialog
-            using (var splashScreen = new SplashScreen())
+            using (SplashScreen splashScreen = new())
             {
                 splashScreen.ShowDialog();
             }

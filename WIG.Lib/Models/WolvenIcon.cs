@@ -1,5 +1,5 @@
 ﻿// WolvenIcon.cs : WIG.Lib
-// Copyright (C) 2024  Ethan Hann
+// Copyright (C) 2025  Ethan Hann
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ namespace WIG.Lib.Models;
 /// <summary>
 /// Represents an Icon that was created by the user or extracted from an imported <c>.archive</c> file.
 /// </summary>
-public class WolvenIcon : INotifyPropertyChanged, ICloneable, IEquatable<WolvenIcon>
+public sealed class WolvenIcon : INotifyPropertyChanged, ICloneable, IEquatable<WolvenIcon>
 {
     private string? _archivePath = "\\path\\to\\archive\\file";
 
@@ -345,7 +345,7 @@ public class WolvenIcon : INotifyPropertyChanged, ICloneable, IEquatable<WolvenI
             isValid &= Path.Exists(ArchivePath);
             isValid &= Path.Exists(ImagePath);
         }
-        
+
         return isValid;
     }
 

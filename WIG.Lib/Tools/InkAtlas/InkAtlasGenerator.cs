@@ -1,5 +1,5 @@
 ﻿// InkAtlasGenerator.cs : WIG.Lib
-// Copyright (C) 2024  Ethan Hann
+// Copyright (C) 2025  Ethan Hann
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -67,7 +67,7 @@ internal class InkAtlasGenerator
     private async Task ProcessImagesAndGenerateInkAtlas(string outputFolderPath, string atlasName, string[] pngFiles,
         CancellationToken token, IProgress<int>? progress)
     {
-        var images = new List<ImageData>();
+        List<ImageData> images = new();
 
         foreach (var pngFile in pngFiles)
         {
@@ -123,7 +123,7 @@ internal class InkAtlasGenerator
         var totalWidth = CalculateTotalWidth(grid, maxWidth);
         var totalHeight = CalculateTotalHeight(grid);
 
-        using var combinedImage = new Image<Rgba32>(totalWidth, totalHeight);
+        using Image<Rgba32> combinedImage = new(totalWidth, totalHeight);
         combinedImage.Mutate(ctx => ctx.BackgroundColor(Color.Transparent)); // Set background to transparent
 
         var jsonData = CreateAtlasJson(grid, combinedImage, totalWidth, totalHeight, atlasName);
@@ -133,8 +133,8 @@ internal class InkAtlasGenerator
 
     private List<List<ImageData>> OrganizeImagesIntoGrid(List<ImageData> images, int maxWidth)
     {
-        var grid = new List<List<ImageData>>();
-        var currentRow = new List<ImageData>();
+        List<List<ImageData>> grid = new();
+        List<ImageData> currentRow = new();
         var currentWidth = 0;
         var maxHeightInRow = 0;
 
@@ -172,7 +172,7 @@ internal class InkAtlasGenerator
     private InkAtlasData CreateAtlasJson(List<List<ImageData>> grid, Image<Rgba32> combinedImage, int totalWidth,
         int totalHeight, string atlasName)
     {
-        var jsonData = new InkAtlasData
+        InkAtlasData jsonData = new()
         {
             Header = new Header(),
             Data = new Data()
@@ -194,7 +194,7 @@ internal class InkAtlasGenerator
                 var x = currentX;
                 combinedImage.Mutate(ctx => ctx.DrawImage(imageData.Image, new Point(x, topPixel), 1));
 
-                var partData = new InkTextureAtlasMapper
+                InkTextureAtlasMapper partData = new()
                 {
                     Type = "inkTextureAtlasMapper",
                     ClippingRectInPixels = new ClippingRectInPixels

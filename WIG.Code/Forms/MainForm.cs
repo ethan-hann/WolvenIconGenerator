@@ -1,5 +1,6 @@
 using AetherUtils.Core.Logging;
 using System.Diagnostics;
+using WIG.Lib.Utility;
 using WolvenIconGenerator.Custom_Controls;
 using WolvenIconGenerator.Properties;
 using WolvenIconGenerator.Utility;
@@ -19,6 +20,8 @@ public partial class MainForm : Form
     {
         CreateImageList();
         ResetTabs();
+
+        AudioManager.Instance.InitializeAsync();
     }
 
     private void CreateImageList()
@@ -54,7 +57,7 @@ public partial class MainForm : Form
 
     private void checkCRAConnectionToolStripMenuItem_Click(object sender, EventArgs e)
     {
-        var isCraRunning = CraIntegration.IsCraRunning();
+        bool isCraRunning = CraIntegration.IsCraRunning();
         MessageBox.Show(isCraRunning ? "CRA is running and can be reached." : "CRA is not running.",
             isCraRunning ? "Communication Successful" : "Communication Failure",
             MessageBoxButtons.OK, isCraRunning ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
@@ -74,9 +77,9 @@ public partial class MainForm : Form
     {
         try
         {
-            var logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            string logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                 "Wolven Icon Generator", "Logs");
-            var startInfo = new ProcessStartInfo
+            ProcessStartInfo startInfo = new()
             {
                 FileName = logPath,
                 UseShellExecute = true,

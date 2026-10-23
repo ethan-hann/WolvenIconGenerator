@@ -214,7 +214,7 @@ public partial class IconCreator : UserControl
 
         if (_previousIcon != null && CraIntegration.IsCraRunning())
         {
-            var result = MessageBox.Show("A previous icon has been created. If it hasn't been sent to CRA, you will have to add the icon to the station manually. Continue?", "Overwrite Icon", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            DialogResult result = MessageBox.Show("A previous icon has been created. If it hasn't been sent to CRA, you will have to add the icon to the station manually. Continue?", "Overwrite Icon", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             if (result == DialogResult.No) return;
         }
 
@@ -255,7 +255,7 @@ public partial class IconCreator : UserControl
         try
         {
             if (txtArchivePath.Text == string.Empty) return;
-            var path = Path.GetDirectoryName(txtArchivePath.Text);
+            string? path = Path.GetDirectoryName(txtArchivePath.Text);
             if (path == null) return;
 
             Process.Start(path);
@@ -278,7 +278,7 @@ public partial class IconCreator : UserControl
             SetProgressPercentage(0);
         });
 
-        var icon = IconManager.Instance.GenerateIconImageAsync(_imagePath, txtAtlasName.Text).Result;
+        WolvenIcon? icon = IconManager.Instance.GenerateIconImageAsync(_imagePath, txtAtlasName.Text).Result;
         if (icon == null)
             AddStatusRow("Failed to import icon.");
         else

@@ -11,7 +11,7 @@ public partial class SplashScreen : Form
     {
         InitializeComponent();
 
-        var version = Assembly.GetExecutingAssembly().GetName()?.Version;
+        Version? version = Assembly.GetExecutingAssembly().GetName()?.Version;
 
         SetVersionLabel(version);
     }
@@ -24,7 +24,7 @@ public partial class SplashScreen : Form
     private async void SplashScreen_Load(object sender, EventArgs e)
     {
         UpdateStatus("Starting...");
-        var statusMessages = await PerformBackgroundTasks();
+        List<string> statusMessages = await PerformBackgroundTasks();
         statusMessages.AddRange(SetUpLogger());
 
         statusMessages.ForEach(msg =>
@@ -43,7 +43,7 @@ public partial class SplashScreen : Form
     /// <returns>A list of status messages generated during the tasks.</returns>
     private async Task<List<string>> PerformBackgroundTasks()
     {
-        var statusMessages = new List<string>();
+        List<string> statusMessages = new();
 
 
         // Check for updates if needed
@@ -93,7 +93,7 @@ public partial class SplashScreen : Form
 
     private List<string> SetUpLogger()
     {
-        var logOptions = new LogOptions()
+        LogOptions logOptions = new()
         {
             AppName = "Wolven Icon Generator",
             LogFileDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),

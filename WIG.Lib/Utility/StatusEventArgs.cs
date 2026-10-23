@@ -1,5 +1,5 @@
 ﻿// StatusEventArgs.cs : WIG.Lib
-// Copyright (C) 2024  Ethan Hann
+// Copyright (C) 2025  Ethan Hann
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,12 +28,12 @@ public class StatusEventArgs(string message, bool isError, int progress)
     /// The message associated with the event.
     /// </summary>
     public string Message { get; private set; } = message;
-    
+
     /// <summary>
     /// The current progress of the operation at the time the event occurred.
     /// </summary>
     public int ProgressPercentage { get; private set; } = progress;
-    
+
     /// <summary>
     /// Indicates if the event is an error.
     /// </summary>
