@@ -1,4 +1,44 @@
-# Welcome to Wolven Icon Generator (WIG) 🤖
-This is a C# application that allows for creating and extracting `.archive` icons for Cyberpunk2077 without using WolvenKit (GUI).
+# Wolven Icon Generator Library (WIG.Lib)
 
-It contains an integration for [Cyber Radio Assistant](https://github.com/ethan-hann/CyberRadio-Assistant) which allows you to send the generated icon to CRA for a radio station. Initially, this was planned to just be a feature for CRA, however it seems like it would be useful as a generic icon generator and extractor for Cyberpunk 2077 so it was created as its own project and an integration was written between CRA and WIG.
+[![NuGet](https://img.shields.io/nuget/v/WIG.Lib)](https://www.nuget.org/packages/WIG.Lib)
+
+WIG.Lib is a .NET library for generating and managing custom icons and radio station audio for Cyberpunk 2077 mods. It powers the icon and audio features of [CyberRadio-Assistant (CRA)](https://github.com/ethan-hann/CyberRadio-Assistant).
+
+## Features
+
+- Generate `.archive` files from PNG images for custom icons.
+- Extract `.archive` files into their parts (`.inkatlas`, `.inkatlas.json`, and `.png`).
+- Manage icons through the `IconManager` class, and generate custom InkAtlas files.
+- Fetch vanilla radio stations and convert WAV files to WEM for song replacements through the `AudioManager` class. See [Converting audio to WEM](https://github.com/ethan-hann/WolvenIconGenerator/blob/main/Converting%20audio%20to%20WEM.md) for the conversion setup.
+- Asynchronous operations with progress reporting for long-running tasks.
+
+## Installation
+
+```
+dotnet add package WIG.Lib
+```
+
+The library targets `net10.0-windows`.
+
+## Development
+
+Building needs the .NET 10 SDK on Windows.
+
+```
+dotnet build WIG.slnx -c Release
+dotnet pack WIG.Lib/WIG.Lib.csproj -c Release -o artifacts
+```
+
+### Releasing
+
+Every change to `main` goes through a pull request. A pull request that changes files under `WIG.Lib/` must bump `<Version>` in `WIG.Lib/WIG.Lib.csproj` to a version that isn't on NuGet yet, or the CI check fails.
+
+When the pull request merges, the publish workflow packs the library, pushes it to NuGet, and creates a `v<Version>` tag and GitHub release.
+
+## History
+
+This repository used to contain a WinForms app (`WIG.Code`) built on the library. The app is no longer maintained and was removed; the last commit with it is tagged `winforms-app-final`.
+
+## License
+
+MIT. See [LICENSE](https://github.com/ethan-hann/WolvenIconGenerator/blob/main/LICENSE).
