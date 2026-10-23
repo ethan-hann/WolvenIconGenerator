@@ -28,6 +28,7 @@ jobs:
         shell: pwsh
         run: |
           $version = dotnet msbuild WIG.Lib/WIG.Lib.csproj -getProperty:Version
+          if ($LASTEXITCODE -ne 0 -or -not $version) { throw "Could not read Version from WIG.Lib.csproj" }
           $published = @()
           try {
             $published = (Invoke-RestMethod https://api.nuget.org/v3-flatcontainer/wig.lib/index.json).versions

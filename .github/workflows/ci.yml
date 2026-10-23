@@ -31,12 +31,14 @@ jobs:
         shell: pwsh
         run: |
           $changed = git diff --name-only "origin/${{ github.base_ref }}...HEAD" -- WIG.Lib/
+          if ($LASTEXITCODE -ne 0) { throw "git diff failed" }
           if (-not $changed) {
             Write-Host "No changes under WIG.Lib/, version bump not required."
             exit 0
           }
 
           $version = dotnet msbuild WIG.Lib/WIG.Lib.csproj -getProperty:Version
+          if ($LASTEXITCODE -ne 0 -or -not $version) { throw "Could not read Version from WIG.Lib.csproj" }
           $published = @()
           try {
             $published = (Invoke-RestMethod https://api.nuget.org/v3-flatcontainer/wig.lib/index.json).versions
