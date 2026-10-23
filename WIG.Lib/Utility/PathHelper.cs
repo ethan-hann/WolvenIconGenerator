@@ -99,6 +99,7 @@ public class PathHelper
     /// <returns></returns>
     /// <exception cref="ArgumentNullException">If the <paramref name="zipFilePath"/> or the <paramref name="destinationDirectory"/> is <c>null</c> or empty.</exception>
     /// <exception cref="FileNotFoundException">If the <paramref name="zipFilePath"/> did not exist on the filesystem.</exception>
+    /// <exception cref="IOException">If an entry would extract outside <paramref name="destinationDirectory"/></exception>
     public static async Task ExtractZipFileAsync(string zipFilePath, string destinationDirectory)
     {
         if (string.IsNullOrEmpty(zipFilePath)) throw new ArgumentNullException(nameof(zipFilePath));
@@ -106,6 +107,7 @@ public class PathHelper
         if (!File.Exists(zipFilePath)) throw new FileNotFoundException("Zip file not found.", zipFilePath);
 
         Directory.CreateDirectory(destinationDirectory);
+        var destinationRoot = Path.GetFullPath(destinationDirectory) + Path.DirectorySeparatorChar;
 
         await Task.Run(() =>
         {
@@ -115,7 +117,10 @@ public class PathHelper
                 var entryKey = entry.Key;
                 if (string.IsNullOrEmpty(entryKey)) continue;
 
-                var destinationPath = Path.Combine(destinationDirectory, entryKey);
+                var destinationPath = Path.GetFullPath(Path.Combine(destinationDirectory, entryKey));
+                if (!destinationPath.StartsWith(destinationRoot, StringComparison.OrdinalIgnoreCase))
+                    throw new IOException($"Zip entry '{entryKey}' would extract outside '{destinationDirectory}'.");
+
                 var destinationDir = Path.GetDirectoryName(destinationPath);
 
                 if (string.IsNullOrEmpty(destinationDir)) continue;
