@@ -23,15 +23,21 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using Newtonsoft.Json;
 using WIG.Lib.Models.Audio;
+using WIG.Lib.Properties;
 
 #endregion
 
 namespace WIG.Lib.Services;
 
 /// <summary>
-///     Service to fetch vanilla station data from a live Google Sheet and
-///     generate a JSON file for runtime use.
+///     Service that loads vanilla station data from the snapshot embedded in WIG.Lib and
+///     generates a JSON file for runtime use. The live Google Sheet is only used to check
+///     whether the snapshot is out of date.
 /// </summary>
+/// <remarks>
+///     The snapshot is <c>Resources/cyberpunk2077_vanillaStations.csv</c>. To refresh it, export the sheet as CSV,
+///     verify the WEM IDs, replace the file, and publish a new WIG.Lib version.
+/// </remarks>
 public class FetchVanillaStations
 {
     private readonly string _gid;
@@ -55,7 +61,7 @@ public class FetchVanillaStations
 
         _outputPath = outputPath ?? throw new ArgumentNullException(nameof(outputPath));
 
-        // Extract Sheet ID and GID from the edit URL (your original logic).
+        // Extract Sheet ID and GID from the edit URL
         var parts = sheetEditUrl.Split(['/'], StringSplitOptions.RemoveEmptyEntries);
         _sheetId = parts.FirstOrDefault(p => p.Length == 44) ??
                    throw new InvalidOperationException("Invalid Sheet ID in URL");
@@ -70,115 +76,22 @@ public class FetchVanillaStations
     }
 
     /// <summary>
-    ///     Fetches the sheet, parses it into objects, and writes vanillaStations.json.
+    ///     Loads the vanilla station snapshot embedded in WIG.Lib, parses it into objects, and writes vanillaStations.json.
     ///     Returns a list of stations for further processing and lookup.
     /// </summary>
+    /// <remarks>
+    ///     This doesn't contact Google Sheets, so it works offline. Use <see cref="IsSnapshotOutdatedAsync" /> to check
+    ///     whether the live sheet has changed since the snapshot was taken.
+    /// </remarks>
     public async Task<List<VanillaStation>> FetchAndSaveAsync()
     {
         var log = AuLogger.GetCurrentLogger<FetchVanillaStations>();
 
         try
         {
-            var csvUrl = BuildCsvUrl();
-            log.Info($"Fetching vanilla station data from: {csvUrl}");
-
-            using var httpClient = new HttpClient();
-            string csvContent;
-
-            try
-            {
-                //Attempt to fetch the CSV from Google Sheets
-                csvContent = await httpClient.GetStringAsync(csvUrl).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                // If we can't reach Google or something went wrong connecting, try to fall back to existing local copy if it exists
-                log.Error(ex, "Couldn't connect to Google to fetch updated sheet. Checking for local copy...");
-
-                // No local copy exists. Can't proceed.
-                if (!File.Exists(_outputPath))
-                    throw new FileNotFoundException("No local copy of vanillaStations.json exists.", ex);
-
-                log.Info($"Local copy found at {_outputPath}; loading that instead.");
-                var existingJson = await File.ReadAllTextAsync(_outputPath).ConfigureAwait(false);
-                var existingStations = JsonConvert.DeserializeObject<List<VanillaStation>>(existingJson);
-
-                if (existingStations == null)
-                    throw new InvalidDataException("Local copy exists but could not be parsed.");
-
-                log.Info($"Loaded {existingStations.Count} stations from local copy.");
-                return existingStations;
-            }
-
-            // Slice off the Google sheet's pre-header; start at the real header row.
-            var normalizedCsv = SliceFromRealHeader(csvContent, out var headerRowIndex);
-            if (headerRowIndex < 0)
-                log.Warn("Could not locate a real header row; attempting to parse original CSV (may fail).");
-            else
-                log.Info($"Detected real header at CSV line index {headerRowIndex} (0-based after normalization).");
-
-            var stations = new Dictionary<string, List<AudioTrack>>(StringComparer.Ordinal);
-
-            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
-            {
-                HasHeaderRecord = true,
-                MissingFieldFound = null,
-                HeaderValidated = null,
-                TrimOptions = TrimOptions.Trim
-            };
-
-            var rowCount = 0;
-
-            using (var reader = new StringReader(normalizedCsv))
-            using (var csv = new CsvReader(reader, config))
-            {
-                if (!await csv.ReadAsync() || !csv.ReadHeader())
-                    throw new InvalidDataException("CSV does not contain a readable header row.");
-
-                // The exact headers we care about
-                const string colTrackName = "Track Name";
-                const string colArtist = "Artist";
-                const string colRadio = "Radio Station";
-                const string colDuration = "Duration";
-                const string colWemV23 = "WEM File v2.3";
-
-                while (await csv.ReadAsync())
-                {
-                    rowCount++;
-
-                    var trackName = csv.GetField(colTrackName);
-                    var artist = csv.GetField(colArtist);
-                    var stationName = csv.GetField(colRadio);
-                    var durationField = csv.GetField(colDuration);
-                    var wemField = csv.GetField(colWemV23);
-
-                    // Skip rows missing essentials
-                    if (string.IsNullOrWhiteSpace(stationName) || string.IsNullOrWhiteSpace(trackName))
-                        continue;
-
-                    var durations = ParseDurations(durationField);
-                    var wemIds = ParseWemIds(wemField);
-
-                    var track = new AudioTrack(
-                        trackName,
-                        artist ?? string.Empty,
-                        durations,
-                        wemIds
-                    );
-
-                    if (!stations.TryGetValue(stationName, out var list))
-                    {
-                        list = new List<AudioTrack>();
-                        stations[stationName] = list;
-                    }
-
-                    list.Add(track);
-                }
-            }
-
-            var stationList = stations
-                .Select(kv => new VanillaStation(kv.Key, kv.Value))
-                .ToList();
+            // Load from the verified snapshot so a sheet edit can't silently change WEM IDs for users
+            log.Info("Loading vanilla station data from the embedded snapshot.");
+            var stationList = await ParseStationsAsync(GetSnapshotCsv());
 
             var json = JsonConvert.SerializeObject(stationList, Formatting.Indented);
 
@@ -188,17 +101,148 @@ public class FetchVanillaStations
 
             await File.WriteAllTextAsync(_outputPath, json).ConfigureAwait(false);
 
-            log.Info(
-                $"Parsed {rowCount} CSV rows. Fetched and processed {stationList.Count} stations. JSON saved to {_outputPath}");
+            log.Info($"Loaded {stationList.Count} stations. JSON saved to {_outputPath}");
 
             return stationList;
         }
         catch (Exception ex)
         {
             AuLogger.GetCurrentLogger<FetchVanillaStations>()
-                .Error(ex, "Error fetching or processing vanilla station data.");
+                .Error(ex, "Error loading or processing vanilla station data.");
             throw;
         }
+    }
+
+    /// <summary>
+    ///     Fetches the live Google Sheet and compares its station data to the embedded snapshot.
+    /// </summary>
+    /// <returns>
+    ///     <c>true</c> if the sheet's station data differs from the snapshot; <c>false</c> if it matches or the sheet
+    ///     couldn't be fetched.
+    /// </returns>
+    public async Task<bool> IsSnapshotOutdatedAsync()
+    {
+        var log = AuLogger.GetCurrentLogger<FetchVanillaStations>();
+
+        try
+        {
+            var csvUrl = BuildCsvUrl();
+            log.Info($"Checking the vanilla station snapshot against: {csvUrl}");
+
+            using var httpClient = new HttpClient();
+            var liveCsv = await httpClient.GetStringAsync(csvUrl).ConfigureAwait(false);
+
+            // Compare parsed data, not raw text, so line endings and the sheet's pre-header don't count as changes
+            var liveJson = JsonConvert.SerializeObject(await ParseStationsAsync(liveCsv));
+            var snapshotJson = JsonConvert.SerializeObject(await ParseStationsAsync(GetSnapshotCsv()));
+
+            var isOutdated = !string.Equals(liveJson, snapshotJson, StringComparison.Ordinal);
+            if (isOutdated)
+                log.Warn("The vanilla station sheet has changed since this snapshot was taken. Verify the changes and update the snapshot.");
+            else
+                log.Info("The vanilla station snapshot matches the live sheet.");
+
+            return isOutdated;
+        }
+        catch (Exception ex)
+        {
+            log.Error(ex, "Couldn't fetch the vanilla station sheet to check the snapshot.");
+            return false;
+        }
+    }
+
+    /// <summary>
+    ///     Gets the embedded vanilla station snapshot as CSV text.
+    /// </summary>
+    private static string GetSnapshotCsv()
+    {
+        // Strip a UTF-8 byte order mark if the file was saved with one
+        var bytes = Resources.cyberpunk2077_vanillaStations;
+        var preamble = Encoding.UTF8.GetPreamble();
+        var offset = bytes.AsSpan().StartsWith(preamble) ? preamble.Length : 0;
+        return Encoding.UTF8.GetString(bytes, offset, bytes.Length - offset);
+    }
+
+    /// <summary>
+    ///     Parses the vanilla station sheet's CSV into a list of stations.
+    /// </summary>
+    private static async Task<List<VanillaStation>> ParseStationsAsync(string csvContent)
+    {
+        var log = AuLogger.GetCurrentLogger<FetchVanillaStations>();
+
+        // Slice off the Google sheet's pre-header; start at the real header row.
+        var normalizedCsv = SliceFromRealHeader(csvContent, out var headerRowIndex);
+        if (headerRowIndex < 0)
+            log.Warn("Could not locate a real header row; attempting to parse original CSV (may fail).");
+        else
+            log.Info($"Detected real header at CSV line index {headerRowIndex} (0-based after normalization).");
+
+        var stations = new Dictionary<string, List<AudioTrack>>(StringComparer.Ordinal);
+
+        var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+        {
+            HasHeaderRecord = true,
+            MissingFieldFound = null,
+            HeaderValidated = null,
+            TrimOptions = TrimOptions.Trim
+        };
+
+        var rowCount = 0;
+
+        using (var reader = new StringReader(normalizedCsv))
+        using (var csv = new CsvReader(reader, config))
+        {
+            if (!await csv.ReadAsync() || !csv.ReadHeader())
+                throw new InvalidDataException("CSV does not contain a readable header row.");
+
+            // The exact headers we care about
+            const string colTrackName = "Track Name";
+            const string colArtist = "Artist";
+            const string colRadio = "Radio Station";
+            const string colDuration = "Duration";
+            const string colWemV23 = "WEM File v2.3";
+
+            while (await csv.ReadAsync())
+            {
+                rowCount++;
+
+                var trackName = csv.GetField(colTrackName);
+                var artist = csv.GetField(colArtist);
+                var stationName = csv.GetField(colRadio);
+                var durationField = csv.GetField(colDuration);
+                var wemField = csv.GetField(colWemV23);
+
+                // Skip rows missing essentials
+                if (string.IsNullOrWhiteSpace(stationName) || string.IsNullOrWhiteSpace(trackName))
+                    continue;
+
+                var durations = ParseDurations(durationField);
+                var wemIds = ParseWemIds(wemField);
+
+                var track = new AudioTrack(
+                    trackName,
+                    artist ?? string.Empty,
+                    durations,
+                    wemIds
+                );
+
+                if (!stations.TryGetValue(stationName, out var list))
+                {
+                    list = new List<AudioTrack>();
+                    stations[stationName] = list;
+                }
+
+                list.Add(track);
+            }
+        }
+
+        var stationList = stations
+            .Select(kv => new VanillaStation(kv.Key, kv.Value))
+            .ToList();
+
+        log.Info($"Parsed {rowCount} CSV rows into {stationList.Count} stations.");
+
+        return stationList;
     }
 
     /// <summary>

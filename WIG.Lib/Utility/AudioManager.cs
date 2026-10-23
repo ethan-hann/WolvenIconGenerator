@@ -183,6 +183,21 @@ public class AudioManager : IDisposable
         }
     }
 
+    /// <summary>
+    ///     Checks whether the live vanilla station sheet has changed since the snapshot embedded in WIG.Lib was taken.
+    ///     <see cref="VanillaStations"/> always comes from the snapshot; this only reports a difference.
+    /// </summary>
+    /// <returns><c>true</c> if the sheet differs from the snapshot; <c>false</c> if it matches or couldn't be fetched.</returns>
+    public async Task<bool> IsVanillaStationSnapshotOutdatedAsync()
+    {
+        if (WorkingDirectory == null)
+            SetupRequiredPaths();
+
+        var jsonOutputPath = Path.Combine(WorkingDirectory!, "vanillaStations.json");
+        var fetcher = new FetchVanillaStations(RadioStationsSheetUrl, jsonOutputPath);
+        return await fetcher.IsSnapshotOutdatedAsync();
+    }
+
     private void SetupRequiredPaths()
     {
         try
