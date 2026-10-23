@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # The library targets net10.0-windows with WinForms, which only builds cleanly on Windows.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build
+        run: dotnet build WIG.slnx -c Release
+
+      - name: Pack
+        run: dotnet pack WIG.Lib/WIG.Lib.csproj -c Release --no-build -o artifacts
+
+      # Every merge to main publishes, so a library change has to carry a version NuGet hasn't seen.
+      - name: Check version bump
+        shell: pwsh
+        run: |
+          $changed = git diff --name-only "origin/${{ github.base_ref }}...HEAD" -- WIG.Lib/
+          if (-not $changed) {
+            Write-Host "No changes under WIG.Lib/, version bump not required."
+            exit 0
+          }
+
+          $version = dotnet msbuild WIG.Lib/WIG.Lib.csproj -getProperty:Version
+          $published = @()
+          try {
+            $published = (Invoke-RestMethod https://api.nuget.org/v3-flatcontainer/wig.lib/index.json).versions
+          } catch {
+            if ($_.Exception.Response.StatusCode.value__ -ne 404) { throw }
+          }
+
+          if ($published -contains $version) {
+            Write-Host "::error file=WIG.Lib/WIG.Lib.csproj::WIG.Lib $version is already on NuGet. Bump <Version> in WIG.Lib/WIG.Lib.csproj."
+            exit 1
+          }
+          Write-Host "WIG.Lib $version is not on NuGet yet."
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: packages
+          path: artifacts/

@@ -1,0 +1,67 @@
+name: Publish
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      # Merges that don't bump the version (docs, CI) skip publishing instead of failing.
+      - name: Check version
+        id: version
+        shell: pwsh
+        run: |
+          $version = dotnet msbuild WIG.Lib/WIG.Lib.csproj -getProperty:Version
+          $published = @()
+          try {
+            $published = (Invoke-RestMethod https://api.nuget.org/v3-flatcontainer/wig.lib/index.json).versions
+          } catch {
+            if ($_.Exception.Response.StatusCode.value__ -ne 404) { throw }
+          }
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+          if ($published -contains $version) {
+            Write-Host "WIG.Lib $version is already on NuGet, nothing to publish."
+            "publish=false" >> $env:GITHUB_OUTPUT
+          } else {
+            "publish=true" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: Pack
+        if: steps.version.outputs.publish == 'true'
+        run: dotnet pack WIG.Lib/WIG.Lib.csproj -c Release -o artifacts -p:ContinuousIntegrationBuild=true
+
+      - name: NuGet login
+        if: steps.version.outputs.publish == 'true'
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      - name: Push to NuGet
+        if: steps.version.outputs.publish == 'true'
+        shell: pwsh
+        run: dotnet nuget push "artifacts/*.nupkg" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: Create GitHub release
+        if: steps.version.outputs.publish == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "v${{ steps.version.outputs.version }}" (Get-ChildItem artifacts/*.nupkg, artifacts/*.snupkg).FullName --target "${{ github.sha }}" --title "v${{ steps.version.outputs.version }}" --generate-notes
