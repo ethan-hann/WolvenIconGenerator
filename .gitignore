@@ -400,3 +400,4 @@ FodyWeavers.xsd
 *.sln.iml
 /WIG.Code/.idea
 Push Nuget Package.bat
+Push Package.bat
