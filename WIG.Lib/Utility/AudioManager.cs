@@ -252,7 +252,7 @@ public class AudioManager : IDisposable
             throw new InvalidOperationException("The sound2wem download URL is null or empty.");
 
         var zipFile = Path.Combine(WorkingDirectory, "sound2wem.zip");
-        await PathHelper.DownloadFileAsync(Sound2WemDownloadUrl, zipFile);
+        await PathHelper.DownloadFileAsync(Sound2WemDownloadUrl, zipFile, Sound2WemDownloadSha256);
         _isSound2WemDownloaded = File.Exists(zipFile);
 
         if (!_isSound2WemDownloaded)
@@ -299,7 +299,7 @@ public class AudioManager : IDisposable
             throw new InvalidOperationException("The Wwise download URL is null or empty.");
 
         var zipFile = Path.Combine(WorkingDirectory, "wwise.zip");
-        await PathHelper.DownloadFileAsync(WwiseDownloadUrl, zipFile);
+        await PathHelper.DownloadFileAsync(WwiseDownloadUrl, zipFile, WwiseDownloadSha256);
         _isWwiseDownloaded = File.Exists(zipFile);
 
         if (!_isWwiseDownloaded)
@@ -804,10 +804,20 @@ public class AudioManager : IDisposable
     public string WwiseDownloadUrl { get; set; } = "https://tortal.xyz/TEx4C";
 
     /// <summary>
+    /// Gets or sets the expected SHA-256 hash of the file at <see cref="WwiseDownloadUrl"/>. Update it when the hosted file changes.
+    /// </summary>
+    public string? WwiseDownloadSha256 { get; set; } = "66FAB4AD7AC5AA33F3DD79EF14A3269F9E717727C15295B6A328925498AB9DB7";
+
+    /// <summary>
     /// Gets or sets the download URL for the sound2wem archive.
     /// </summary>
     public string Sound2WemDownloadUrl { get; set; } =
-        "https://github.com/EternalLeo/sound2wem/archive/refs/heads/master.zip";
+        "https://github.com/EternalLeo/sound2wem/archive/refs/tags/v6.zip";
+
+    /// <summary>
+    /// Gets or sets the expected SHA-256 hash of the file at <see cref="Sound2WemDownloadUrl"/>. Update it when the URL changes.
+    /// </summary>
+    public string? Sound2WemDownloadSha256 { get; set; } = "09434B0D95F7F3FB43E98A3951215C1C36C76EB645821BAFCD490726B5C4821B";
 
     /// <summary>
     /// Gets or sets the path to the sound2wem script.

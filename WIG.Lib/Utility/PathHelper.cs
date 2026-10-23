@@ -50,6 +50,30 @@ public class PathHelper
     }
 
     /// <summary>
+    /// Download a file from the specified URL and verify its SHA-256 hash.
+    /// </summary>
+    /// <param name="fileUrl">The URL of the file to download.</param>
+    /// <param name="destinationFilePath">The path to save the file on disk, including file name.</param>
+    /// <param name="expectedSha256Hash">The expected SHA-256 hash of the downloaded file. If <c>null</c> or empty, hash verification is skipped.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    /// <exception cref="InvalidDataException">Thrown if the SHA-256 hash of the downloaded file does not match the expected hash.</exception>
+    public static async Task DownloadFileAsync(string fileUrl, string destinationFilePath, string? expectedSha256Hash)
+    {
+        await DownloadFileAsync(fileUrl, destinationFilePath);
+
+        if (string.IsNullOrWhiteSpace(expectedSha256Hash)) {
+            AuLogger.GetCurrentLogger<PathHelper>().Warn($"Expected SHA256 hash is null or empty. Skipping hash verification for file: {destinationFilePath}");
+            return;
+        }
+
+        var actualSha256Hash = HashUtils.ComputeSha256Hash(destinationFilePath, false);
+        if (HashUtils.CompareSha256Hash(expectedSha256Hash, actualSha256Hash)) return;
+
+        File.Delete(destinationFilePath);
+        throw new InvalidDataException($"SHA256 hash mismatch for file: {destinationFilePath}. Expected: {expectedSha256Hash}, Actual: {actualSha256Hash}. The downloaded file has been deleted.");
+    }
+
+    /// <summary>
     /// Download an image from the specified URL and convert it to a <see cref="Bitmap"/>.
     /// </summary>
     /// <param name="imageUrl">The URL of the image to download.</param>

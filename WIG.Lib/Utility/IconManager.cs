@@ -275,6 +275,11 @@ public class IconManager : IDisposable
     public string? WolvenKitVersion { get; set; } = "8.14.0";
 
     /// <summary>
+    /// Gets or sets the expected SHA-256 hash of the WolvenKit CLI zip for <see cref="WolvenKitVersion"/>. Update it when the version changes.
+    /// </summary>
+    public string? WolvenKitDownloadSha256 { get; set; } = "13F8DDBEAA4C5CD1FCB438584643ABEA72205C85EEDC841F1BB0A4FB22AAA578";
+
+    /// <summary>
     /// Gets the working directory for the icon generator. Defaults to <c>%LOCALAPPDATA%\RadioExt-Helper\tools</c>.
     /// </summary>
     public string? WorkingDirectory { get; private set; }
@@ -489,7 +494,7 @@ public class IconManager : IDisposable
         if (string.IsNullOrEmpty(_wolvenKitCliDownloadUrl))
             throw new InvalidOperationException("The WolvenKit CLI download URL is null or empty.");
 
-        await PathHelper.DownloadFileAsync(_wolvenKitCliDownloadUrl, zipFile);
+        await PathHelper.DownloadFileAsync(_wolvenKitCliDownloadUrl, zipFile, WolvenKitDownloadSha256);
         if (!File.Exists(zipFile)) return _isWolvenKitDownloaded;
 
         _isWolvenKitDownloaded = true;
