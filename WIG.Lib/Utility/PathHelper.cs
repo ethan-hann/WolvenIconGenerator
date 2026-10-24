@@ -37,16 +37,60 @@ public class PathHelper
     /// <returns>A task that represents the current async operation.</returns>
     public static async Task DownloadFileAsync(string fileUrl, string destinationFilePath)
     {
+        var logger = AuLogger.GetCurrentLogger<PathHelper>();
+        logger.Info($"Downloading file from {fileUrl} to {destinationFilePath}");
+
         using HttpClient client = new();
         using var response = await client.GetAsync(fileUrl, HttpCompletionOption.ResponseHeadersRead);
         response.EnsureSuccessStatusCode();
 
-        await using var contentStream = await response.Content.ReadAsStreamAsync();
-        FileStream fileStream = new(destinationFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192,
-            true);
-        await using var stream = fileStream.ConfigureAwait(false);
+        var totalBytes = response.Content.Headers.ContentLength;
+        const int bufferSize = 81920;
+        const int percentStep = 5;
+        const long bytesStep = 5 * 1024 * 1024;
 
-        await contentStream.CopyToAsync(fileStream);
+        var buffer = new byte[bufferSize];
+        long totalBytesRead = 0;
+        var nextPercentToLog = percentStep;
+        var nextBytesToLog = bytesStep;
+
+        await using var contentStream = await response.Content.ReadAsStreamAsync();
+        await using var fileStream = new FileStream(
+            destinationFilePath,
+            FileMode.Create,
+            FileAccess.Write,
+            FileShare.None,
+            bufferSize,
+            useAsync: true);
+
+        int bytesRead;
+        while ((bytesRead = await contentStream.ReadAsync(buffer.AsMemory(0, buffer.Length))) > 0)
+        {
+            await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead));
+            totalBytesRead += bytesRead;
+
+            if (totalBytes is > 0)
+            {
+                var percent = (int)(totalBytesRead * 100 / totalBytes.Value);
+                if (percent < nextPercentToLog) continue;
+
+                logger.Info($"Download progress: {percent}% ({totalBytesRead:N0}/{totalBytes.Value:N0} bytes)");
+                while (nextPercentToLog <= percent)
+                {
+                    nextPercentToLog += percentStep;
+                }
+            }
+            else if (totalBytesRead >= nextBytesToLog)
+            {
+                logger.Info($"Download progress: {totalBytesRead / (1024d * 1024):F1} MB downloaded");
+                while (nextBytesToLog <= totalBytesRead)
+                {
+                    nextBytesToLog += bytesStep;
+                }
+            }
+        }
+
+        logger.Info($"Download complete: {totalBytesRead:N0} bytes written to {destinationFilePath}");
     }
 
     /// <summary>
