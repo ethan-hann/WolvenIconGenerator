@@ -111,8 +111,10 @@ public class AudioManager : IDisposable
     /// <summary>
     ///     Initializes the AudioManager by setting up necessary directories and fetching vanilla station data.
     /// </summary>
+    /// <param name="downloadProgress">An optional progress reporter that receives each tool download's fraction, from 0.0 to 1.0.
+    /// sound2wem and Wwise download one after the other, so the value restarts from 0.0 for the second download. Not called when no download is needed.</param>
     /// <returns></returns>
-    public async Task InitializeAsync()
+    public async Task InitializeAsync(IProgress<double>? downloadProgress = null)
     {
         if (IsInitialized) return;
 
@@ -144,7 +146,7 @@ public class AudioManager : IDisposable
 
             _wolvenKitCli = new Cli(_wolvenKitCliExe, _cancellationTokenSource!.Token);
 
-            await DownloadAudioToolsIfRequiredAsync();
+            await DownloadAudioToolsIfRequiredAsync(downloadProgress);
 
             if (Sound2WemDirectory == null)
                 throw new InvalidOperationException("The sound2wem directory is null.");
@@ -229,13 +231,13 @@ public class AudioManager : IDisposable
 
     #region Audio Tool Downloads
 
-    private async Task DownloadAudioToolsIfRequiredAsync()
+    private async Task DownloadAudioToolsIfRequiredAsync(IProgress<double>? progress)
     {
-        await DownloadSound2WemIfRequiredAsync();
-        await DownloadWwiseIfRequiredAsync();
+        await DownloadSound2WemIfRequiredAsync(progress);
+        await DownloadWwiseIfRequiredAsync(progress);
     }
 
-    private async Task DownloadSound2WemIfRequiredAsync()
+    private async Task DownloadSound2WemIfRequiredAsync(IProgress<double>? progress)
     {
         if (Sound2WemDirectory == null || WorkingDirectory == null)
             throw new InvalidOperationException("The sound2wem or working directory is null.");
@@ -252,7 +254,7 @@ public class AudioManager : IDisposable
             throw new InvalidOperationException("The sound2wem download URL is null or empty.");
 
         var zipFile = Path.Combine(WorkingDirectory, "sound2wem.zip");
-        await PathHelper.DownloadFileAsync(Sound2WemDownloadUrl, zipFile, Sound2WemDownloadSha256);
+        await PathHelper.DownloadFileAsync(Sound2WemDownloadUrl, zipFile, Sound2WemDownloadSha256, progress);
         _isSound2WemDownloaded = File.Exists(zipFile);
 
         if (!_isSound2WemDownloaded)
@@ -282,7 +284,7 @@ public class AudioManager : IDisposable
         }
     }
 
-    private async Task DownloadWwiseIfRequiredAsync()
+    private async Task DownloadWwiseIfRequiredAsync(IProgress<double>? progress)
     {
         if (WwiseToolsDirectory == null || WorkingDirectory == null)
             throw new InvalidOperationException("The Wwise tools or working directory is null.");
@@ -299,7 +301,7 @@ public class AudioManager : IDisposable
             throw new InvalidOperationException("The Wwise download URL is null or empty.");
 
         var zipFile = Path.Combine(WorkingDirectory, "wwise.zip");
-        await PathHelper.DownloadFileAsync(WwiseDownloadUrl, zipFile, WwiseDownloadSha256);
+        await PathHelper.DownloadFileAsync(WwiseDownloadUrl, zipFile, WwiseDownloadSha256, progress);
         _isWwiseDownloaded = File.Exists(zipFile);
 
         if (!_isWwiseDownloaded)

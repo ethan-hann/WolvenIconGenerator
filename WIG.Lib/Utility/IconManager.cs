@@ -130,8 +130,9 @@ public class IconManager : IDisposable
     /// <summary>
     /// Initializes the icon manager. This method sets up the required paths and downloads the WolvenKit CLI if required. Only needs to be called once.
     /// </summary>
+    /// <param name="downloadProgress">An optional progress reporter that receives the WolvenKit CLI download fraction, from 0.0 to 1.0. Not called when no download is needed.</param>
     /// <returns>A task representing the asynchronous initialization operation.</returns>
-    public async Task InitializeAsync()
+    public async Task InitializeAsync(IProgress<double>? downloadProgress = null)
     {
         if (IsInitialized) return;
 
@@ -147,7 +148,7 @@ public class IconManager : IDisposable
 
             _wolvenKitCliExe = Path.Combine(WolvenKitTempDirectory, "WolvenKit.CLI.exe");
 
-            await DownloadWolvenKitIfRequiredAsync();
+            await DownloadWolvenKitIfRequiredAsync(downloadProgress);
 
             if (!File.Exists(_wolvenKitCliExe))
                 throw new FileNotFoundException("The WolvenKit CLI executable could not be found.", _wolvenKitCliExe);
@@ -450,9 +451,10 @@ public class IconManager : IDisposable
     /// <summary>
     /// Downloads the WolvenKit CLI if it has not been downloaded yet and extracts it to the temporary directory: <see cref="WolvenKitTempDirectory"/>.
     /// </summary>
+    /// <param name="progress">An optional progress reporter that receives the download fraction, from 0.0 to 1.0.</param>
     /// <returns>A task representing the asynchronous download and extraction operation.</returns>
     /// <exception cref="InvalidOperationException">Occurs if either <see cref="WorkingDirectory"/> or <see cref="WolvenKitTempDirectory"/> are <c>null</c>.</exception>
-    private async Task DownloadWolvenKitIfRequiredAsync()
+    private async Task DownloadWolvenKitIfRequiredAsync(IProgress<double>? progress)
     {
         if (_isWolvenKitDownloaded && _isWolvenKitExtracted) return;
 
@@ -471,7 +473,7 @@ public class IconManager : IDisposable
             }
             else
             {
-                if (!await DownloadWolvenKitAsync(zipFile))
+                if (!await DownloadWolvenKitAsync(zipFile, progress))
                     throw new InvalidOperationException("The WolvenKit CLI could not be downloaded.");
 
                 if (!await ExtractWolvenKitAsync(zipFile))
@@ -488,13 +490,14 @@ public class IconManager : IDisposable
     /// Asynchronously downloads the WolvenKit CLI from the specified URL.
     /// </summary>
     /// <param name="zipFile">The zip file to save.</param>
+    /// <param name="progress">An optional progress reporter that receives the download fraction, from 0.0 to 1.0.</param>
     /// <returns>A task representing the asynchronous download operation.</returns>
-    private async Task<bool> DownloadWolvenKitAsync(string zipFile)
+    private async Task<bool> DownloadWolvenKitAsync(string zipFile, IProgress<double>? progress)
     {
         if (string.IsNullOrEmpty(_wolvenKitCliDownloadUrl))
             throw new InvalidOperationException("The WolvenKit CLI download URL is null or empty.");
 
-        await PathHelper.DownloadFileAsync(_wolvenKitCliDownloadUrl, zipFile, WolvenKitDownloadSha256);
+        await PathHelper.DownloadFileAsync(_wolvenKitCliDownloadUrl, zipFile, WolvenKitDownloadSha256, progress);
         if (!File.Exists(zipFile)) return _isWolvenKitDownloaded;
 
         _isWolvenKitDownloaded = true;

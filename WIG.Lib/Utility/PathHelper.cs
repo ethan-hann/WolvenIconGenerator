@@ -34,9 +34,15 @@ public class PathHelper
     /// </summary>
     /// <param name="fileUrl">The URL of the file to download.</param>
     /// <param name="destinationFilePath">The path to save the file on disk, including file name.</param>
+    /// <param name="progress">An optional progress reporter that receives the downloaded fraction, from 0.0 to 1.0, at most once per whole percent.
+    /// It is not called when the server does not send a content length.</param>
     /// <returns>A task that represents the current async operation.</returns>
-    public static async Task DownloadFileAsync(string fileUrl, string destinationFilePath)
+    public static async Task DownloadFileAsync(string fileUrl, string destinationFilePath, IProgress<double>? progress = null)
     {
+        const int bufferSize = 81920;
+        const int logPercentStep = 5;
+        const long logBytesStep = 5 * 1024 * 1024;
+
         var logger = AuLogger.GetCurrentLogger<PathHelper>();
         logger.Info($"Downloading file from {fileUrl} to {destinationFilePath}");
 
@@ -45,14 +51,11 @@ public class PathHelper
         response.EnsureSuccessStatusCode();
 
         var totalBytes = response.Content.Headers.ContentLength;
-        const int bufferSize = 81920;
-        const int percentStep = 5;
-        const long bytesStep = 5 * 1024 * 1024;
-
         var buffer = new byte[bufferSize];
         long totalBytesRead = 0;
-        var nextPercentToLog = percentStep;
-        var nextBytesToLog = bytesStep;
+        var lastReportedPercent = -1;
+        var nextPercentToLog = logPercentStep;
+        var nextBytesToLog = logBytesStep;
 
         await using var contentStream = await response.Content.ReadAsStreamAsync();
         await using var fileStream = new FileStream(
@@ -72,21 +75,24 @@ public class PathHelper
             if (totalBytes is > 0)
             {
                 var percent = (int)(totalBytesRead * 100 / totalBytes.Value);
-                if (percent < nextPercentToLog) continue;
 
-                logger.Info($"Download progress: {percent}% ({totalBytesRead:N0}/{totalBytes.Value:N0} bytes)");
-                while (nextPercentToLog <= percent)
+                // Each report posts to the caller's UI thread, so send one per whole percent, not one per buffer.
+                if (percent != lastReportedPercent)
                 {
-                    nextPercentToLog += percentStep;
+                    progress?.Report((double)totalBytesRead / totalBytes.Value);
+                    lastReportedPercent = percent;
+                }
+
+                if (percent >= nextPercentToLog)
+                {
+                    logger.Info($"Download progress: {percent}% ({totalBytesRead:N0}/{totalBytes.Value:N0} bytes)");
+                    nextPercentToLog = (percent / logPercentStep + 1) * logPercentStep;
                 }
             }
             else if (totalBytesRead >= nextBytesToLog)
             {
                 logger.Info($"Download progress: {totalBytesRead / (1024d * 1024):F1} MB downloaded");
-                while (nextBytesToLog <= totalBytesRead)
-                {
-                    nextBytesToLog += bytesStep;
-                }
+                nextBytesToLog = (totalBytesRead / logBytesStep + 1) * logBytesStep;
             }
         }
 
@@ -99,11 +105,12 @@ public class PathHelper
     /// <param name="fileUrl">The URL of the file to download.</param>
     /// <param name="destinationFilePath">The path to save the file on disk, including file name.</param>
     /// <param name="expectedSha256Hash">The expected SHA-256 hash of the downloaded file. If <c>null</c> or empty, hash verification is skipped.</param>
+    /// <param name="progress">An optional progress reporter that receives the downloaded fraction, from 0.0 to 1.0. Hash verification is not included.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
     /// <exception cref="InvalidDataException">Thrown if the SHA-256 hash of the downloaded file does not match the expected hash.</exception>
-    public static async Task DownloadFileAsync(string fileUrl, string destinationFilePath, string? expectedSha256Hash)
+    public static async Task DownloadFileAsync(string fileUrl, string destinationFilePath, string? expectedSha256Hash, IProgress<double>? progress = null)
     {
-        await DownloadFileAsync(fileUrl, destinationFilePath);
+        await DownloadFileAsync(fileUrl, destinationFilePath, progress);
 
         if (string.IsNullOrWhiteSpace(expectedSha256Hash)) {
             AuLogger.GetCurrentLogger<PathHelper>().Warn($"Expected SHA256 hash is null or empty. Skipping hash verification for file: {destinationFilePath}");
