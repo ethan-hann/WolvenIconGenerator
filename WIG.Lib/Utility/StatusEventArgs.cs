@@ -25,6 +25,15 @@ namespace WIG.Lib.Utility;
 public class StatusEventArgs(string message, bool isError, int progress)
 {
     /// <summary>
+    /// Creates status event data for an operation that does not track a percentage. <see cref="ProgressPercentage"/> is <c>0</c>.
+    /// </summary>
+    /// <param name="message">The message associated with the event.</param>
+    /// <param name="isError">Indicates if the event is an error.</param>
+    public StatusEventArgs(string message, bool isError) : this(message, isError, 0)
+    {
+    }
+
+    /// <summary>
     /// The message associated with the event.
     /// </summary>
     public string Message { get; private set; } = message;

@@ -39,8 +39,6 @@ public class AudioManager : IDisposable
 
     private CancellationTokenSource? _cancellationTokenSource;
 
-    private int _currentProgress;
-
     private Cli? _wolvenKitCli;
     private string _wolvenKitCliExe = string.Empty;
 
@@ -430,14 +428,14 @@ public class AudioManager : IDisposable
     {
         if (error == null) return;
 
-        CliStatus?.Invoke(this, new StatusEventArgs(error, true, _currentProgress));
+        CliStatus?.Invoke(this, new StatusEventArgs(error, true));
     }
 
     private void OnCliProgressChanged(string? output)
     {
         if (output == null) return;
 
-        CliStatus?.Invoke(this, new StatusEventArgs(output, false, _currentProgress));
+        CliStatus?.Invoke(this, new StatusEventArgs(output, false));
     }
 
     private void OnAudioImportStarted(StatusEventArgs e)
@@ -538,15 +536,15 @@ public class AudioManager : IDisposable
     /// </summary>
     /// <param name="vanillaStationName">The original, vanilla station to retrieve filenames from.</param>
     /// <param name="files">The list of files to use as replacement tracks.</param>
-    /// <param name="progress">An optional progress reporter to track the progress of the operation.</param>
+    /// <param name="progress">An optional progress reporter that receives each <see cref="AudioArchiveStage"/> as it starts.
+    /// The converting and packing stages take most of the time and report nothing while they run, so show them as indeterminate.</param>
     /// <param name="overwrite">Indicates whether existing directories should be overwritten if they exist.</param>
     /// <param name="cancellationToken">The cancellation token for stopping the task.</param>
     /// <returns>A task that, when complete, returns a <see cref="WolvenAudio"/> or <c>null</c> if the operation is canceled or fails.</returns>
     /// <exception cref="InvalidOperationException">Occurs when the audio manager has not been initialized.</exception>
     public async Task<WolvenAudio?> GenerateAudioArchiveAsync(string vanillaStationName, List<ReplacementTrack> files,
-        IProgress<int>? progress = null, bool overwrite = true, CancellationToken cancellationToken = default)
+        IProgress<AudioArchiveProgress>? progress = null, bool overwrite = true, CancellationToken cancellationToken = default)
     {
-        _currentProgress = 0;
         if (!IsInitialized)
             throw new InvalidOperationException("The audio manager has not been initialized.");
 
@@ -558,8 +556,7 @@ public class AudioManager : IDisposable
             AuLogger.GetCurrentLogger<AudioManager>("GenerateAudioArchiveAsync")
                 .Info($"The audio import operation has started: {vanillaStationName}");
             OnAudioImportStarted(new StatusEventArgs($"The audio import operation has started: {vanillaStationName}",
-                false,
-                _currentProgress));
+                false));
 
             WolvenAudio? audio = null;
 
@@ -574,8 +571,7 @@ public class AudioManager : IDisposable
             AuLogger.GetCurrentLogger<AudioManager>("GenerateAudioArchiveAsync")
                 .Info($"The audio import operation has completed successfully: {audio?.VanillaStation?.StationName}");
             OnAudioImportFinished(new StatusEventArgs(
-                $"The audio import operation has completed successfully: {audio?.VanillaStation?.StationName}", false,
-                _currentProgress));
+                $"The audio import operation has completed successfully: {audio?.VanillaStation?.StationName}", false));
 
             return audio;
         }
@@ -584,19 +580,17 @@ public class AudioManager : IDisposable
             AuLogger.GetCurrentLogger<AudioManager>("GenerateAudioArchiveAsync")
                 .Info($"The audio import operation was cancelled: {vanillaStationName}");
             OnAudioImportStatus(new StatusEventArgs($"The audio import operation was cancelled: {vanillaStationName}",
-                false,
-                _currentProgress));
+                false));
         }
         catch (Exception e)
         {
             AuLogger.GetCurrentLogger<AudioManager>("GenerateAudioArchiveAsync").Error(e, e.Message);
-            OnAudioImportStatus(new StatusEventArgs(e.Message, true, _currentProgress));
+            OnAudioImportStatus(new StatusEventArgs(e.Message, true));
         }
         finally
         {
             _cancellationTokenSource?.Dispose();
             _cancellationTokenSource = null;
-            ResetProgress();
         }
 
         return null;
@@ -610,44 +604,37 @@ public class AudioManager : IDisposable
     /// <param name="files">A list of <see cref="ReplacementTrack"/> that specify the tracks to replace in the vanilla station.</param>
     /// <param name="overwrite">Indicates whether existing files should be overwritten.</param>
     /// <param name="token">The token used for cancelling operations.</param>
-    /// <param name="progress">An optional progress reporter for reporting progress.</param>
+    /// <param name="progress">An optional progress reporter that receives each <see cref="AudioArchiveStage"/> as it starts.</param>
     /// <returns>A task containing the resulting <see cref="WolvenAudio"/>.</returns>
     private async Task<WolvenAudio> CreateAudioArchiveAsync(string vanillaStationName, List<ReplacementTrack> files,
         bool overwrite,
-        CancellationToken token, IProgress<int>? progress)
+        CancellationToken token, IProgress<AudioArchiveProgress>? progress)
     {
         try
         {
-            // Initial validation
-            _currentProgress += 5;
-            progress?.Report(_currentProgress);
+            progress?.Report(new AudioArchiveProgress(AudioArchiveStage.Preparing, files.Count));
             token.ThrowIfCancellationRequested();
 
             //Check files exist in the replacement tracks list
             foreach (var file in files.Where(file => !FileHelper.DoesFileExist(file.ReplacementFilePath)))
             {
                 OnAudioImportStarted(new StatusEventArgs(
-                    $"The audio file could not be found: {file.ReplacementFilePath}", true, _currentProgress));
+                    $"The audio file could not be found: {file.ReplacementFilePath}", true));
                 CancelOperation();
                 throw new FileNotFoundException("The audio file could not be found.", file.ReplacementFilePath);
             }
 
-            _currentProgress += 10;
-            progress?.Report(_currentProgress);
             token.ThrowIfCancellationRequested();
 
             // Create necessary directories
             var projectDirectories = CreateImportDirectories(vanillaStationName, overwrite);
             if (projectDirectories.Count == 0)
             {
-                OnAudioImportStarted(new StatusEventArgs("The project directories could not be created.", true,
-                    _currentProgress));
+                OnAudioImportStarted(new StatusEventArgs("The project directories could not be created.", true));
                 CancelOperation();
                 throw new InvalidOperationException("The project directories could not be created.");
             }
 
-            _currentProgress += 10;
-            progress?.Report(_currentProgress);
             token.ThrowIfCancellationRequested();
 
             // Copy the audio files to the audio folder for the project
@@ -661,17 +648,14 @@ public class AudioManager : IDisposable
                 File.Copy(file.ReplacementFilePath, stagedWavPath, overwrite);
             }
 
-            _currentProgress += 10;
-            progress?.Report(_currentProgress);
+            progress?.Report(new AudioArchiveProgress(AudioArchiveStage.Converting, files.Count));
             token.ThrowIfCancellationRequested();
 
             // Convert staged WAV files into WEM files directly in source/archive.
             await _wwiseCli!.ConvertWavToWemAsync(_ffmpegExe, _wwiseCliExe,
                 projectDirectories["archiveBasePath"], projectDirectories["importedAudio"], token,
-                progress, WwiseConversionProfile);
+                conversionProfile: WwiseConversionProfile);
 
-            _currentProgress += 10;
-            progress?.Report(_currentProgress);
             token.ThrowIfCancellationRequested();
 
             // Ensure converted WEM files exist in source/archive.
@@ -682,38 +666,29 @@ public class AudioManager : IDisposable
                     throw new FileNotFoundException("The converted WEM file could not be found.", convertedWemPath);
             }
 
-            _currentProgress += 10;
-            progress?.Report(_currentProgress);
-            token.ThrowIfCancellationRequested();
-
-            _currentProgress += 20;
-            progress?.Report(_currentProgress);
+            progress?.Report(new AudioArchiveProgress(AudioArchiveStage.Packing, files.Count));
             token.ThrowIfCancellationRequested();
 
             // Pack the project into a .archive file
             await _wolvenKitCli!.PackArchiveAsync(projectDirectories["archiveBasePath"],
-                projectDirectories["projectBasePath"], token, progress);
+                projectDirectories["projectBasePath"], token);
+
+            progress?.Report(new AudioArchiveProgress(AudioArchiveStage.Finishing, files.Count));
+            token.ThrowIfCancellationRequested();
 
             // Rename the .archive file to the station name
             var originalArchivePath = Path.Combine(projectDirectories["projectBasePath"], "archive.archive");
             var newArchivePath = Path.Combine(projectDirectories["projectBasePath"], $"{vanillaStationName}.archive");
             File.Move(originalArchivePath, newArchivePath, overwrite);
 
-            _currentProgress += 10;
-            progress?.Report(_currentProgress);
-            token.ThrowIfCancellationRequested();
-
             // Verify the new archive exists
             if (!File.Exists(newArchivePath))
             {
-                OnAudioImportStatus(new StatusEventArgs("The final .archive file could not be renamed.", true,
-                    _currentProgress));
+                OnAudioImportStatus(new StatusEventArgs("The final .archive file could not be renamed.", true));
                 CancelOperation();
                 throw new FileNotFoundException("The final .archive file could not be renamed.", newArchivePath);
             }
 
-            _currentProgress += 5;
-            progress?.Report(_currentProgress);
             token.ThrowIfCancellationRequested();
 
             // Delete the original archive
@@ -727,8 +702,6 @@ public class AudioManager : IDisposable
                 AudioId = Guid.Parse(projectDirectories["replacedStationGuid"])
             };
 
-            _currentProgress = 100;
-            progress?.Report(_currentProgress);
             return audio;
         }
         catch (Exception e)
@@ -747,14 +720,6 @@ public class AudioManager : IDisposable
     {
         return VanillaStations.FirstOrDefault(s =>
             string.Equals(s.StationName, stationName, StringComparison.OrdinalIgnoreCase));
-    }
-
-    /// <summary>
-    /// Resets the current progress percentage to 0.
-    /// </summary>
-    private void ResetProgress()
-    {
-        _currentProgress = 0;
     }
 
     /// <summary>
